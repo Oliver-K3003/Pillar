@@ -1,7 +1,5 @@
 # Setup Instructions
 
----
-
 ## Dependencies
 
 ### Prereqs

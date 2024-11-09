@@ -77,15 +77,46 @@
   animation-name: slidein;
 }
 
+.profile {
+  position: relative;
+  border-radius: 50%;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.profile img {
+  width: 1.5rem;
+  height: 1.5rem;
+  opacity: 0.8;
+}
+
 .user-msg {
   margin-left: auto;
   border-radius: 10px 10px 0px 10px;
   background-color: #3983782b;
 }
 
+.user-profile {
+  display: none;
+  /* margin-left: auto;
+  border: 1px solid #2c2b2b8d;
+  left: 2.5rem;
+  top: 3.5rem; */
+}
+
 .resp-msg {
   border-radius: 10px 10px 10px 0px;
-  background-color: #398378de;
+  /* background-color: #3983789e; */
+}
+
+.resp-profile {
+  border: 1px solid #2c2b2b8d;
+  right: 2.5em;
+  top: 2.5rem;
+  /* top: 3.5rem; */
 }
 
 /* animations */

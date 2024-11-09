@@ -4,6 +4,19 @@ import axios from "axios";
 // asset imports
 import submitArrow from "./assets/submit_arrow.svg";
 import fullLogo from "./assets/pillar_logo_full.svg";
+import blackLogo from "./assets/pillar_icon_black.svg";
+
+/* 
+TODO
+  [ ] fix outline when char bar is focused
+  [ ] iron out profile pictures (not sure if we want user to have one)
+  [ ] clean up colour scheme
+  [ ] remove logo on first prompt
+  [ ] optimize for extension format
+  [ ] improve function of given text input to react more similarly to competitor models
+  [ ] decide layout of prompts and answers (options currently exist -> see comments in App.css 
+    under user-profile, resp-profile, & resp-msg)
+*/
 
 function App() {
   const [userMsgs, setUserMsgs] = useState([]);
@@ -23,11 +36,8 @@ function App() {
     // create deep copy
     let newUserMsgs = JSON.parse(JSON.stringify(userMsgs));
 
-    console.log(newUserMsgs);
-
     newUserMsgs.push(msgVal);
 
-    console.log(`setting usermsgs: ${newUserMsgs}`);
     setUserMsgs(newUserMsgs);
 
     // sessionStorage.setItem("user-msgs", JSON.stringify(newUserMsgs));
@@ -38,14 +48,11 @@ function App() {
         // deep copy of resp msg list
         let newRespMsgs = JSON.parse(JSON.stringify(respMsgs));
 
-        console.log(newRespMsgs);
         // add new data to list
         newRespMsgs.push(resp.data);
 
-        console.log(`setting respmsgs: ${newRespMsgs}`);
         // update state with new msgs
         setRespMsgs(newRespMsgs);
-        console.log("testresp" + respMsgs);
         // update session storage with new msgs
         // sessionStorage.setItem("resp-msgs", JSON.stringify(newRespMsgs));
       })
@@ -53,8 +60,6 @@ function App() {
   };
 
   const dispMsgs = () => {
-    console.log(`usermgs: ${userMsgs}`);
-    console.log(`respmsgs: ${respMsgs}`);
     // ensure msgs exist
     if (userMsgs !== null) {
       if (respMsgs !== null) {
@@ -85,12 +90,22 @@ function App() {
         {
           <>
             {combinedMsgs.map((msg, i) => (
-              <div
-                key={i}
-                className={`${i % 2 === 0 ? "resp-msg" : "user-msg"} msg`}
-              >
-                {msg}
-              </div>
+              <>
+                <div
+                  // replace user-profile with common 'hidden' class if we decide to go forth with that display method
+                  className={`${
+                    i % 2 === 0 ? "user-profile" : "resp-profile"
+                  } profile`}
+                >
+                  <img src={blackLogo} alt="" />
+                </div>
+                <div
+                  key={i}
+                  className={`${i % 2 === 0 ? "user-msg" : "resp-msg"} msg`}
+                >
+                  {msg}
+                </div>
+              </>
             ))}
           </>
         }
