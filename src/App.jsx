@@ -11,7 +11,7 @@ TODO
   [ ] fix outline when char bar is focused
   [ ] iron out profile pictures (not sure if we want user to have one)
   [ ] clean up colour scheme
-  [ ] remove logo on first prompt
+  [done] remove logo on first prompt
   [ ] optimize for extension format
   [ ] improve function of given text input to react more similarly to competitor models
   [ ] decide layout of prompts and answers (options currently exist -> see comments in App.css 
@@ -84,7 +84,7 @@ function App() {
   return (
     <div className="container">
       <div className="background">
-        <img src={fullLogo} alt="" />
+        {userMsgs.length < 1 ? <img src={fullLogo} alt="" /> : <></>}
       </div>
       <div className="message-list">
         {
