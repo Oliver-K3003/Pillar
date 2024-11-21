@@ -1,6 +1,13 @@
+// style sheet imports
 import "./App.css";
+// general imports
 import { useState, useEffect } from "react";
 import axios from "axios";
+import ReactMarkdown from "react-markdown";
+// plugin imports
+import remarkGfm from "remark-gfm";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { vs } from "react-syntax-highlighter/dist/esm/styles/prism";
 // asset imports
 import submitArrow from "./assets/submit_arrow.svg";
 import fullLogo from "./assets/pillar_logo_full.svg";
@@ -8,10 +15,12 @@ import blackLogo from "./assets/pillar_icon_black.svg";
 
 /* 
 TODO
+  [x] add basic model support
+  [ ] decide on code display format options here(https://github.com/react-syntax-highlighter/react-syntax-highlighter/blob/master/AVAILABLE_STYLES_PRISM.MD)
   [ ] fix outline when char bar is focused
   [ ] iron out profile pictures (not sure if we want user to have one)
   [ ] clean up colour scheme
-  [done] remove logo on first prompt
+  [x] remove logo on first prompt
   [ ] optimize for extension format
   [ ] improve function of given text input to react more similarly to competitor models
   [ ] decide layout of prompts and answers (options currently exist -> see comments in App.css 
@@ -39,12 +48,13 @@ function App() {
     newUserMsgs.push(msgVal);
 
     setUserMsgs(newUserMsgs);
-
+    console.log(msgVal);
     // sessionStorage.setItem("user-msgs", JSON.stringify(newUserMsgs));
     // get response from API server
     axios
-      .get("http://localhost:5000/get-resp")
+      .post("http://localhost:5000/get-resp", { prompt: msgVal })
       .then((resp) => {
+        console.log(resp.data);
         // deep copy of resp msg list
         let newRespMsgs = JSON.parse(JSON.stringify(respMsgs));
 
@@ -92,18 +102,41 @@ function App() {
             {combinedMsgs.map((msg, i) => (
               <>
                 <div
+                  key={i}
                   // replace user-profile with common 'hidden' class if we decide to go forth with that display method
                   className={`${
                     i % 2 === 0 ? "user-profile" : "resp-profile"
                   } profile`}
                 >
-                  <img src={blackLogo} alt="" />
+                  <img key={i} src={blackLogo} alt="" />
                 </div>
                 <div
                   key={i}
                   className={`${i % 2 === 0 ? "user-msg" : "resp-msg"} msg`}
                 >
-                  {msg}
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      code({ node, inline, className, children, ...props }) {
+                        const match = /language-(\w+)/.exec(className || "");
+                        return !inline && match ? (
+                          <SyntaxHighlighter
+                            children={String(children).replace(/\n$/, "")}
+                            style={vs}
+                            language={match[1]}
+                            PreTag="div"
+                            {...props}
+                          />
+                        ) : (
+                          <code className={className} {...props}>
+                            {children}
+                          </code>
+                        );
+                      },
+                    }}
+                  >
+                    {msg}
+                  </ReactMarkdown>
                 </div>
               </>
             ))}
