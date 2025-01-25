@@ -1,33 +1,8 @@
-# Setup Instructions
+# React + Vite
 
-## Dependencies
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-### Prereqs
+Currently, two official plugins are available:
 
-Install [NodeJS LTS](https://nodejs.org/en)
-
-Install [Python 3.13](https://www.python.org/downloads/)
-
-### Python
-
-Run the following command
-
-```bash
-pip install -r /path/to/requirements.txt
-```
-
-### Node
-
-Run the following command
-
-```bash
-npm i
-```
-
-## Running the App
-
-Enter the following into the terminal
-
-```bash
-npm run dev
-```
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
