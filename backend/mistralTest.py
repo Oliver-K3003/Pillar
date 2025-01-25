@@ -28,7 +28,7 @@ def sendReq(userContent: str) -> str:
 
 
 def parseOutput(output: dict) -> str:
-    outputStr = f'{output.get('body')}\n'
+    outputStr = f'{output.get("body")}\n'
 
     for ex in output.get('examples'):
         outputStr = outputStr+f'{ex}\n'

@@ -4,14 +4,18 @@ import "./App.css";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import ReactMarkdown from "react-markdown";
+import { Sidebar, Menu, MenuItem, SubMenu } from "react-pro-sidebar";
 // plugin imports
 import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vs } from "react-syntax-highlighter/dist/esm/styles/prism";
 // asset imports
 import submitArrow from "./assets/submit_arrow.svg";
+import newChat from './assets/chat-add-icon.svg'
 import fullLogo from "./assets/pillar_logo_full.svg";
 import blackLogo from "./assets/pillar_icon_black.svg";
+import collapseIcon from "./assets/collapse-icon.svg";
+import expandIcon from "./assets/expand-icon.svg";
 
 /* 
 TODO
@@ -32,6 +36,8 @@ function App() {
   const [respMsgs, setRespMsgs] = useState([]);
   const [combinedMsgs, setCombinedMsgs] = useState([]);
   const [msgVal, setMsgVal] = useState("");
+  const [isSideNavCollapsed, setSideNavCollapsed] = useState(false);
+  const [chatIds, setChatIds] = useState([0]);
 
   useEffect(() => dispMsgs(), [userMsgs]);
 
@@ -91,74 +97,99 @@ function App() {
     }
   };
 
+  const createNewChat = () => {
+    const currId = chatIds[chatIds.length - 1];
+    setChatIds([...chatIds, currId + 1]);
+  }
+
   return (
-    <div className="container">
-      <div className="background">
-        {userMsgs.length < 1 ? <img src={fullLogo} alt="" /> : <></>}
+    <>
+      <div className="sideNav">
+        <Sidebar collapsed={isSideNavCollapsed}>
+          <div className="sideNavHeader">
+            <button className="headerButton" type="button" onClick={() => setSideNavCollapsed(!isSideNavCollapsed)}>
+              {!isSideNavCollapsed ? <img src={collapseIcon} alt="" /> : <img src={expandIcon} alt="" />}
+            </button>
+            {!isSideNavCollapsed ? <button className="headerButton" type="button" onClick={createNewChat}>
+              <img src={newChat} alt="" />
+            </button> : null}
+          </div>
+          <Menu title="Pillar">
+            <SubMenu label="Chats">
+              {chatIds.map((id) =>
+                <MenuItem key={id} id={id}><span>Chat {id + 1}</span></MenuItem>
+              )}
+            </SubMenu>
+          </Menu>
+        </Sidebar>
       </div>
-      <div className="message-list">
-        {
-          <>
-            {combinedMsgs.map((msg, i) => (
-              <>
-                <div
-                  key={i}
-                  // replace user-profile with common 'hidden' class if we decide to go forth with that display method
-                  className={`${
-                    i % 2 === 0 ? "user-profile" : "resp-profile"
-                  } profile`}
-                >
-                  <img key={i} src={blackLogo} alt="" />
-                </div>
-                <div
-                  key={i}
-                  className={`${i % 2 === 0 ? "user-msg" : "resp-msg"} msg`}
-                >
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    components={{
-                      code({ node, inline, className, children, ...props }) {
-                        const match = /language-(\w+)/.exec(className || "");
-                        return !inline && match ? (
-                          <SyntaxHighlighter
-                            children={String(children).replace(/\n$/, "")}
-                            style={vs}
-                            language={match[1]}
-                            PreTag="div"
-                            {...props}
-                          />
-                        ) : (
-                          <code className={className} {...props}>
-                            {children}
-                          </code>
-                        );
-                      },
-                    }}
+      <div className="container">
+        <div className="background">
+          {userMsgs.length < 1 ? <img src={fullLogo} alt="" /> : <></>}
+        </div>
+        <div className="message-list">
+          {
+            <>
+              {combinedMsgs.map((msg, i) => (
+                <>
+                  <div
+                    key={i}
+                    // replace user-profile with common 'hidden' class if we decide to go forth with that display method
+                    className={`${i % 2 === 0 ? "user-profile" : "resp-profile"
+                      } profile`}
                   >
-                    {msg}
-                  </ReactMarkdown>
-                </div>
-              </>
-            ))}
-          </>
-        }
+                    <img key={i} src={blackLogo} alt="" />
+                  </div>
+                  <div
+                    key={i}
+                    className={`${i % 2 === 0 ? "user-msg" : "resp-msg"} msg`}
+                  >
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        code({ node, inline, className, children, ...props }) {
+                          const match = /language-(\w+)/.exec(className || "");
+                          return !inline && match ? (
+                            <SyntaxHighlighter
+                              children={String(children).replace(/\n$/, "")}
+                              style={vs}
+                              language={match[1]}
+                              PreTag="div"
+                              {...props}
+                            />
+                          ) : (
+                            <code className={className} {...props}>
+                              {children}
+                            </code>
+                          );
+                        },
+                      }}
+                    >
+                      {msg}
+                    </ReactMarkdown>
+                  </div>
+                </>
+              ))}
+            </>
+          }
+        </div>
+        <div className="chat-bar">
+          <input
+            type="text"
+            placeholder="Message Pillar"
+            onChange={handleInput}
+          />
+          <button
+            type="button"
+            onClick={() => {
+              getResp();
+            }}
+          >
+            <img src={submitArrow} alt="" />
+          </button>
+        </div>
       </div>
-      <div className="chat-bar">
-        <input
-          type="text"
-          placeholder="Message Pillar"
-          onChange={handleInput}
-        />
-        <button
-          type="button"
-          onClick={() => {
-            getResp();
-          }}
-        >
-          <img src={submitArrow} alt="" />
-        </button>
-      </div>
-    </div>
+    </>
   );
 }
 
