@@ -1,11 +1,15 @@
 import json
-from flask import Flask, request
+import sys
+from flask import Flask, jsonify, request
 from flask_cors import CORS, cross_origin
 from mistralTest import sendReq, parseOutput
-
+import requests
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
+
+CLIENT_ID = "asdf"
+CLIENT_SECRET = "asdf" # probably not good idea to leave this here lol
 
 @app.route('/get-resp', methods=['POST'])
 @cross_origin(supports_credentials=True)
@@ -17,6 +21,27 @@ def getResp():
     promptResponse = parseOutput(promptResponse)
     return promptResponse
 
+@app.route('/exchange-code-for-token', methods=['GET'])
+@cross_origin(supports_credentials=True)
+def OAuthRedirect():
+    code = request.args.get('code')
+    
+    # Getting token from code.
+    githubAuthURL = f'https://github.com/login/oauth/access_token'
+    
+    headers = {
+        'accept': 'application/json'
+    }
+
+    data = {
+        "client_id": CLIENT_ID,
+        "client_secret": CLIENT_SECRET,
+        "code": code
+    }
+    
+    res = requests.post(githubAuthURL, headers=headers, data=data)
+    data = res.json()
+    return jsonify(data)
 
 if __name__ == "__main__":
     app.run(port=5000)

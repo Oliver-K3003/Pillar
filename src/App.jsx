@@ -12,6 +12,7 @@ import { vs } from "react-syntax-highlighter/dist/esm/styles/prism";
 import submitArrow from "./assets/submit_arrow.svg";
 import fullLogo from "./assets/pillar_logo_full.svg";
 import blackLogo from "./assets/pillar_icon_black.svg";
+import GithubLogin from "./components/GithubLogin";
 
 /* 
 TODO
@@ -34,7 +35,6 @@ function App() {
   const [msgVal, setMsgVal] = useState("");
 
   useEffect(() => dispMsgs(), [userMsgs]);
-
   useEffect(() => dispMsgs(), [respMsgs]);
 
   const handleInput = (e) => {
@@ -93,6 +93,7 @@ function App() {
 
   return (
     <div className="container">
+      <GithubLogin/>
       <div className="background">
         {userMsgs.length < 1 ? <img src={fullLogo} alt="" /> : <></>}
       </div>
