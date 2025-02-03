@@ -16,13 +16,12 @@ import blackLogo from "./assets/pillar_icon_black.svg";
 /* 
 TODO
   [x] add basic model support
-  [ ] decide on code display format options here(https://github.com/react-syntax-highlighter/react-syntax-highlighter/blob/master/AVAILABLE_STYLES_PRISM.MD)
   [ ] fix outline when char bar is focused
   [ ] iron out profile pictures (not sure if we want user to have one)
-  [ ] clean up colour scheme
+  [ ] clean up color scheme
   [x] remove logo on first prompt
   [ ] optimize for extension format
-  [ ] improve function of given text input to react more similarly to competitor models
+  [ ] improve function of given text input to react more similarly to competitor models (js stream?)
   [ ] decide layout of prompts and answers (options currently exist -> see comments in App.css 
     under user-profile, resp-profile, & resp-msg)
 */
@@ -41,7 +40,11 @@ function App() {
     setMsgVal(e.target.value);
   };
 
-  const getResp = () => {
+  const getResp = (e) => {
+    e.preventDefault();
+
+    e.target.querySelector('input').value = "";
+
     // create deep copy
     let newUserMsgs = JSON.parse(JSON.stringify(userMsgs));
 
@@ -102,7 +105,7 @@ function App() {
             {combinedMsgs.map((msg, i) => (
               <>
                 <div
-                  key={i}
+                  key={i+1}
                   // replace user-profile with common 'hidden' class if we decide to go forth with that display method
                   className={`${
                     i % 2 === 0 ? "user-profile" : "resp-profile"
@@ -143,21 +146,18 @@ function App() {
           </>
         }
       </div>
-      <div className="chat-bar">
-        <input
+      <form className="chat-bar" onSubmit={(e) => getResp(e)}>
+          <input
           type="text"
           placeholder="Message Pillar"
           onChange={handleInput}
-        />
-        <button
+          />
+          <button
           type="button"
-          onClick={() => {
-            getResp();
-          }}
-        >
+          >
           <img src={submitArrow} alt="" />
-        </button>
-      </div>
+          </button>
+      </form>
     </div>
   );
 }
