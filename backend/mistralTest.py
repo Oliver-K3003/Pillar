@@ -33,8 +33,9 @@ def parseOutput(output: dict) -> str:
     for ex in output.get('examples'):
         outputStr = outputStr+f'{ex}\n'
 
-    for si in output.get('supporting_information'):
-        outputStr = outputStr+f'{si}\n'
+    if output.get('supporting_information'):
+        for si in output.get('supporting_information'):
+            outputStr = outputStr+f'{si}\n'
 
     return outputStr
 

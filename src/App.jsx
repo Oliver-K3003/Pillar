@@ -1,19 +1,14 @@
 // style sheet imports
 import "./App.css";
 // general imports
-import { useState, useEffect } from "react";
-import axios from "axios";
-import ReactMarkdown from "react-markdown";
+import { useState } from "react";
 import { Sidebar, Menu, MenuItem, SubMenu } from "react-pro-sidebar";
-// plugin imports
-import remarkGfm from "remark-gfm";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { vs } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { BrowserRouter as Router, Routes, Route, Link, useParams } from "react-router-dom";
+import { Chat } from './components/Chat.jsx';
 // asset imports
-import submitArrow from "./assets/submit_arrow.svg";
 import newChat from './assets/chat-add-icon.svg'
 import fullLogo from "./assets/pillar_logo_full.svg";
-import blackLogo from "./assets/pillar_icon_black.svg";
+
 import collapseIcon from "./assets/collapse-icon.svg";
 import expandIcon from "./assets/expand-icon.svg";
 
@@ -32,70 +27,8 @@ TODO
 */
 
 function App() {
-  const [userMsgs, setUserMsgs] = useState([]);
-  const [respMsgs, setRespMsgs] = useState([]);
-  const [combinedMsgs, setCombinedMsgs] = useState([]);
-  const [msgVal, setMsgVal] = useState("");
   const [isSideNavCollapsed, setSideNavCollapsed] = useState(false);
   const [chatIds, setChatIds] = useState([0]);
-
-  useEffect(() => dispMsgs(), [userMsgs]);
-
-  useEffect(() => dispMsgs(), [respMsgs]);
-
-  const handleInput = (e) => {
-    setMsgVal(e.target.value);
-  };
-
-  const getResp = () => {
-    // create deep copy
-    let newUserMsgs = JSON.parse(JSON.stringify(userMsgs));
-
-    newUserMsgs.push(msgVal);
-
-    setUserMsgs(newUserMsgs);
-    console.log(msgVal);
-    // sessionStorage.setItem("user-msgs", JSON.stringify(newUserMsgs));
-    // get response from API server
-    axios
-      .post("http://localhost:5000/get-resp", { prompt: msgVal })
-      .then((resp) => {
-        console.log(resp.data);
-        // deep copy of resp msg list
-        let newRespMsgs = JSON.parse(JSON.stringify(respMsgs));
-
-        // add new data to list
-        newRespMsgs.push(resp.data);
-
-        // update state with new msgs
-        setRespMsgs(newRespMsgs);
-        // update session storage with new msgs
-        // sessionStorage.setItem("resp-msgs", JSON.stringify(newRespMsgs));
-      })
-      .catch((err) => console.error(`Error in getResp: ${err}`));
-  };
-
-  const dispMsgs = () => {
-    // ensure msgs exist
-    if (userMsgs !== null) {
-      if (respMsgs !== null) {
-        // if user and resp msgs exist alternate them
-        let msgChain = [];
-        let l = Math.min(userMsgs.length, respMsgs.length);
-
-        for (let i = 0; i < l; i++) {
-          msgChain.push(userMsgs[i], respMsgs[i]);
-        }
-        msgChain.push(...userMsgs.slice(l), ...respMsgs.slice(l));
-
-        setCombinedMsgs(msgChain);
-      } else {
-        setCombinedMsgs(userMsgs);
-      }
-    } else {
-      return <></>;
-    }
-  };
 
   const createNewChat = () => {
     const currId = chatIds[chatIds.length - 1];
@@ -103,7 +36,7 @@ function App() {
   }
 
   return (
-    <>
+    <Router>
       <div className="sideNav">
         <Sidebar collapsed={isSideNavCollapsed}>
           <div className="sideNavHeader">
@@ -111,86 +44,37 @@ function App() {
               {!isSideNavCollapsed ? <img src={collapseIcon} alt="" /> : <img src={expandIcon} alt="" />}
             </button>
             {!isSideNavCollapsed ? <button className="headerButton" type="button" onClick={createNewChat}>
-              <img src={newChat} alt="" />
+              <img src={newChat} alt=""/>
             </button> : null}
           </div>
           <Menu title="Pillar">
             <SubMenu label="Chats">
-              {chatIds.map((id) =>
-                <MenuItem key={id} id={id}><span>Chat {id + 1}</span></MenuItem>
+              {chatIds.map((id) => 
+                <MenuItem key={id} id={id}>
+                  <Link to={`/chat/${id}`}>Chat {id + 1}</Link>
+                </MenuItem>
               )}
             </SubMenu>
           </Menu>
         </Sidebar>
       </div>
-      <div className="container">
-        <div className="background">
-          {userMsgs.length < 1 ? <img src={fullLogo} alt="" /> : <></>}
-        </div>
-        <div className="message-list">
-          {
-            <>
-              {combinedMsgs.map((msg, i) => (
-                <>
-                  <div
-                    key={i}
-                    // replace user-profile with common 'hidden' class if we decide to go forth with that display method
-                    className={`${i % 2 === 0 ? "user-profile" : "resp-profile"
-                      } profile`}
-                  >
-                    <img key={i} src={blackLogo} alt="" />
-                  </div>
-                  <div
-                    key={i}
-                    className={`${i % 2 === 0 ? "user-msg" : "resp-msg"} msg`}
-                  >
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      components={{
-                        code({ node, inline, className, children, ...props }) {
-                          const match = /language-(\w+)/.exec(className || "");
-                          return !inline && match ? (
-                            <SyntaxHighlighter
-                              children={String(children).replace(/\n$/, "")}
-                              style={vs}
-                              language={match[1]}
-                              PreTag="div"
-                              {...props}
-                            />
-                          ) : (
-                            <code className={className} {...props}>
-                              {children}
-                            </code>
-                          );
-                        },
-                      }}
-                    >
-                      {msg}
-                    </ReactMarkdown>
-                  </div>
-                </>
-              ))}
-            </>
-          }
-        </div>
-        <div className="chat-bar">
-          <input
-            type="text"
-            placeholder="Message Pillar"
-            onChange={handleInput}
-          />
-          <button
-            type="button"
-            onClick={() => {
-              getResp();
-            }}
-          >
-            <img src={submitArrow} alt="" />
-          </button>
-        </div>
-      </div>
-    </>
+      <Routes>
+        <Route path="/" element={<Home/>} />
+        <Route path="/chat/:chatId" element={<Chat />} />
+      </Routes>
+    </Router>
+      
   );
 }
+
+const Home = () => (
+  <div className="container">
+    <div className="background">
+      <img src={fullLogo} alt="" />
+    </div>
+  </div>
+);
+
+
 
 export default App;
