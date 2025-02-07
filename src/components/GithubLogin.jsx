@@ -1,3 +1,4 @@
+import axios from "axios";
 import React, { useEffect, useState } from 'react';
 
 const GithubLogin = () => {
@@ -9,34 +10,33 @@ const GithubLogin = () => {
 
   useEffect(() => {
     console.log("useEffect() for 'code' variable.");
-    const token = localStorage.getItem("githubToken");
+    const token = sessionStorage.getItem("githubToken");
+
 
     if (token) {
       console.log("Has token, getting authorization.");
-      const token = localStorage.getItem("githubToken");
-      fetch("https://api.github.com/user", {
-				headers: { Authorization: token },
-			})
-				.then((res) => res.json()) // Parse the response as JSON
-				.then((data) => {
-          console.log(data);
-				});
+      const token = sessionStorage.getItem("githubToken");
+      axios.get("https://api.github.com/user", {
+        headers: { Authorization: token },
+      }).then((response) => {
+        console.log(response.data);
+      }).catch((error) => {
+        console.error(error);
+      });
     } else if (code) {
       console.log("Code: " + code);
-      fetch(`http://localhost:5000/exchange-code-for-token?code=${code}&state=YOUR_RANDOMLY_GENERATED_STATE`)
-        .then((res) => {
-          if (!res.ok) {
-            throw new Error(`HTTP error! status: ${res.status}`);
-          }
-          return res.json(); // Parse the JSON response
-        })
-        .then((data) => {
-          setData(data);
-          localStorage.setItem("githubToken", `${data.token_type} ${data.access_token}`);
-        })
-        .catch((error) => {
-          console.error("Fetch Error:", error); // Log errors to the console
-        });
+      axios.get(`http://localhost:5000/exchange-code-for-token`, {
+        params: {
+          code: code,
+          state: "YOUR_RANDOMLY_GENERATED_STATE",
+        },
+      }).then((response) => {
+        const data = response.data;
+        setData(data);
+        sessionStorage.setItem("githubToken", `${data.token_type} ${data.access_token}`);
+      }).catch((error) => {
+        console.error("Axios Error:", error);
+      })
     }
   }, [code]);
 
@@ -47,11 +47,8 @@ const GithubLogin = () => {
     const redirect_uri = "http://localhost:3000/";
     const scope = "read:user repo";
     const authUrl = `https://github.com/login/oauth/authorize?client_id=${client_id}&redirect_uri=${redirect_uri}&scope=${scope}`;
-
     window.location.href = authUrl;
   }
-
-
 
   return (
     <>
