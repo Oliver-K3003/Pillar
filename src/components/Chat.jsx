@@ -44,20 +44,21 @@ export const Chat = () => {
     setMsgVal(e.target.value);
   };
 
-  const getResp = () => {
+  const getResp = (e) => {
+    e.preventDefault();
+
+    e.target.querySelector('input').value = "";
     // create deep copy
     let newUserMsgs = JSON.parse(JSON.stringify(userMsgs));
 
     newUserMsgs.push(msgVal);
-
     setUserMsgs(newUserMsgs);
-    console.log(msgVal);
+    
     // sessionStorage.setItem("user-msgs", JSON.stringify(newUserMsgs));
     // get response from API server
     axios
       .post("http://localhost:5000/get-resp", { prompt: msgVal })
       .then((resp) => {
-        console.log(resp.data);
         // deep copy of resp msg list
         let newRespMsgs = JSON.parse(JSON.stringify(respMsgs));
 
@@ -106,7 +107,7 @@ export const Chat = () => {
             {combinedMsgs.map((msg, i) => (
               <>
                 <div
-                  key={i}
+                  key={i+1}
                   // replace user-profile with common 'hidden' class if we decide to go forth with that display method
                   className={`${i % 2 === 0 ? "user-profile" : "resp-profile"
                     } profile`}
@@ -146,21 +147,16 @@ export const Chat = () => {
           </>
         }
       </div>
-      <div className="chat-bar">
+      <form className="chat-bar" onSubmit={(e) => getResp(e)}>
         <input
           type="text"
           placeholder="Message Pillar"
           onChange={handleInput}
         />
-        <button
-          type="button"
-          onClick={() => {
-            getResp();
-          }}
-        >
+        <button type="submit">
           <img src={submitArrow} alt="" />
         </button>
-      </div>
+      </form>
     </div>
   );
 }
