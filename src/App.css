@@ -8,6 +8,29 @@
   overflow: auto;
 }
 
+.sideNav {
+  max-width: 400px;
+  width: 10vw;
+}
+
+.sideNavHeader {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.headerButton { 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid #398378;
+}
+
+.headerButtonIcon {
+  background-color: white;
+}
 /* chat bar */
 
 .chat-bar {

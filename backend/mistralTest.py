@@ -28,13 +28,14 @@ def sendReq(userContent: str) -> str:
 
 
 def parseOutput(output: dict) -> str:
-    outputStr = f'{output.get('body')}\n'
+    outputStr = f'{output.get("body")}\n'
 
     for ex in output.get('examples'):
         outputStr = outputStr+f'{ex}\n'
 
-    for si in output.get('supporting_information'):
-        outputStr = outputStr+f'{si}\n'
+    if output.get('supporting_information'):
+        for si in output.get('supporting_information'):
+            outputStr = outputStr+f'{si}\n'
 
     return outputStr
 
