@@ -15,13 +15,12 @@ import expandIcon from "./assets/expand-icon.svg";
 /* 
 TODO
   [x] add basic model support
-  [ ] decide on code display format options here(https://github.com/react-syntax-highlighter/react-syntax-highlighter/blob/master/AVAILABLE_STYLES_PRISM.MD)
   [ ] fix outline when char bar is focused
   [ ] iron out profile pictures (not sure if we want user to have one)
-  [ ] clean up colour scheme
+  [ ] clean up color scheme
   [x] remove logo on first prompt
   [ ] optimize for extension format
-  [ ] improve function of given text input to react more similarly to competitor models
+  [ ] improve function of given text input to react more similarly to competitor models (js stream?)
   [ ] decide layout of prompts and answers (options currently exist -> see comments in App.css 
     under user-profile, resp-profile, & resp-msg)
 */
@@ -63,7 +62,6 @@ function App() {
         <Route path="/chat/:chatId" element={<Chat />} />
       </Routes>
     </Router>
-      
   );
 }
 
