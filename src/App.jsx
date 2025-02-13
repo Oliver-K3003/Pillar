@@ -33,7 +33,7 @@ function App() {
     return (
         <Router>
             <div className="container">
-      <GithubLogin/>
+                <GithubLogin />
                 <div className="sideNav">
                     <Sidebar collapsed={isSideNavCollapsed}>
                         <div className="sideNavHeader">
@@ -44,7 +44,19 @@ function App() {
                                 <img className="headerButtonIcon" src={newChat} alt="" />
                             </button> : null}
                         </div>
-                        <Menu title="Pillar">
+                        <Menu className="chat-container" title="Pillar" menuItemStyles={{
+                            button: ({ level, active, disabled }) => {
+                                if (level === 0 || level === 1) {
+                                    return {
+                                        transition: "backgroundColor 200ms ease-in-out",
+                                        "&:hover": {
+                                            backgroundColor: "#403f3f !important",
+                                        }
+                                    }
+                                }
+                            },
+                        }
+                        }>
                             <SubMenu label="Chats">
                                 {chatIds.map((id) =>
                                     <MenuItem key={id} id={id}>

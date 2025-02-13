@@ -1,5 +1,5 @@
 import axios from "axios";
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const GithubLogin = () => {
   // Get return code to get token form GitHub.
@@ -52,7 +52,7 @@ const GithubLogin = () => {
 
   return (
     <>
-      <button onClick={githubLoginRedirect}>Login Using GitHub</button>
+      <button onClick={githubLoginRedirect} className="github-login">Login Using GitHub</button>
     </>
   )
 }

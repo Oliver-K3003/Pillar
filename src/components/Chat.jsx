@@ -39,7 +39,7 @@ function ResponseMessage({ msg, timeout = 1000 }) {
                         xmlns="http://www.w3.org/2000/svg"
                         className="cursor"
                     >
-                        <rect x="10" y="2" width="6" height="14" fill="#2c2b2b" />
+                        <rect x="10" y="2" width="6" height="14" fill="#ffffff83" />
                     </svg>
                 }
             </div>
