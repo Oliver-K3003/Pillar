@@ -40,6 +40,16 @@ def OAuthRedirect():
     }
     
     res = requests.post(githubAuthURL, headers=headers, data=data)
+    
+    if res.status_code == 200:
+        try:
+            json_response = res.json()
+            return jsonify(json_response)
+        except requests.exceptions.JSONDecodeError:
+            return jsonify({"error": "error", "response": res.text}), 500
+    else:
+        return jsonify({"error": f"{res.status_code}", "response": res.text}), res.status_code
+
     data = res.json()
     return jsonify(data)
 

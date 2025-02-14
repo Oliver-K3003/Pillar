@@ -22,10 +22,11 @@ const GithubLogin = () => {
         console.log(response.data);
       }).catch((error) => {
         console.error(error);
+        console.log("token didn't work")
       });
     } else if (code) {
       console.log("Code: " + code);
-      axios.get(`http://localhost:5000/exchange-code-for-token`, {
+      axios.get(`/exchange-code-for-token`, {
         params: {
           code: code,
           state: "YOUR_RANDOMLY_GENERATED_STATE",
@@ -44,7 +45,7 @@ const GithubLogin = () => {
     // When user clicks button, redirect to GitHub to get the neccessary access.
     console.log("githubLoginRedirect()");
     const client_id = "Ov23lipp1FKM5Lltmvw0"; // Move to env file after lol
-    const redirect_uri = "http://localhost:3000/";
+    const redirect_uri = "http://localhost:5173/";
     const scope = "read:user repo";
     const authUrl = `https://github.com/login/oauth/authorize?client_id=${client_id}&redirect_uri=${redirect_uri}&scope=${scope}`;
     window.location.href = authUrl;
