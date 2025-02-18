@@ -68,7 +68,7 @@ const GithubLogin = () => {
             }
           }, false);
 
-          // Check to see if the 
+          // Check to see if the window closed before receiving the code.
 
         } else {
           console.log("Error within backend function /login/github")
