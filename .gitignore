@@ -29,3 +29,6 @@ __pycache__
 
 # venv
 venv/*
+
+# env file
+.env

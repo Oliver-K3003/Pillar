@@ -49,8 +49,10 @@ function App() {
                                 if (level === 0 || level === 1) {
                                     return {
                                         transition: "backgroundColor 200ms ease-in-out",
+                                        zIndex: "100",
                                         "&:hover": {
                                             backgroundColor: "#403f3f !important",
+                                            zIndex: "100"
                                         }
                                     }
                                 }

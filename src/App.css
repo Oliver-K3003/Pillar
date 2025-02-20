@@ -32,6 +32,7 @@
     top: 0;
     left: 0;
     background-color: #2b2b2b;
+    z-index: 100;
     border: none;
 }
 
@@ -44,6 +45,7 @@
     flex-direction: row;
     justify-content: space-between;
     background-color: #2b2b2b;
+    z-index: 100;
 }
 
 .headerButton {
@@ -116,12 +118,22 @@
     justify-content: center;
     align-items: center;
     position: absolute;
+    padding: 5px;
     right: 0.5rem;
-    width: 2rem;
-    height: 2rem;
-    border: 1px solid #398378;
     border-radius: 50%;
+    border: 1px solid #398378;
     background-color: #398378;
+    transition: all 200ms ease-in-out;
+}
+
+.chat-bar button:hover{
+    border: 1px solid #39837893;
+    background-color: #39837893;
+}
+
+.chat-bar button>img{
+    width: 1rem;
+    height: 1rem;
 }
 
 /* bg */
@@ -151,8 +163,6 @@
     text-wrap: wrap;
     font-size: 16px;
     margin: 0 0 2rem 0;
-    animation-duration: 0.5s;
-    animation-name: slidein;
 }
 
 .profile {
@@ -163,6 +173,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    z-index: 0;
 }
 
 .profile img {
@@ -192,7 +203,8 @@
 }
 
 .resp-profile {
-    border: 1px solid #2c2b2b8d;
+    border: 1px solid #242323;
+    background-color: #242323;
     right: 2.5em;
     top: 2.5rem;
     /* top: 3.5rem; */
