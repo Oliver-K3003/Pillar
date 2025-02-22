@@ -124,6 +124,12 @@
     background-color: #398378;
 }
 
+.menuItemContainer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
 /* bg */
 
 .background img {

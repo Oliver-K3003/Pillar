@@ -8,7 +8,7 @@ import { Chat } from './components/Chat.jsx';
 // asset imports
 import newChat from './assets/chat-add-icon.svg'
 import fullLogo from "./assets/pillar_logo_full.svg";
-
+import deleteIcon from './assets/delete-button.svg';
 import collapseIcon from "./assets/collapse-icon.svg";
 import expandIcon from "./assets/expand-icon.svg";
 import GithubLogin from "./components/GithubLogin";
@@ -60,7 +60,10 @@ function App() {
                             <SubMenu label="Chats">
                                 {chatIds.map((id) =>
                                     <MenuItem key={id} id={id}>
-                                        <Link className="chat-link" to={`/chat/${id}`}>Chat {id + 1}</Link>
+                                        <div className="menuItemContainer">
+                                            <Link className="chat-link" to={`/chat/${id}`}>Chat {id + 1}</Link>
+                                            <button className="headerButton"><img className="headerButtonIcon" src={deleteIcon} /></button>
+                                        </div>
                                     </MenuItem>
                                 )}
                             </SubMenu>
