@@ -62,13 +62,16 @@ const GithubLogin = () => {
               codeReceived = true;
               console.log("Received OAuth Code:", code);
               popup.close(); // Auto-close the popup
-
-              // Exchange the code for an access token
-              // fetchGitHubUser(code);
             }
           }, false);
 
           // Check to see if the window closed before receiving the code.
+          const checkPopup = setInterval(() => {
+            if (!popup || popup.closed) {
+              clearInterval(checkPopup);
+              if (!codeReceived) console.log("OAuth flow not completed.");
+            }
+          }, 1000);
 
         } else {
           console.log("Error within backend function /login/github")
