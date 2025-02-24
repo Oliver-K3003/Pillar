@@ -1,45 +1,6 @@
 import axios from "axios";
-import { useEffect, useState } from 'react';
 
 const GithubLogin = () => {
-  // Get return code to get token form GitHub.
-  const urlParams = new URLSearchParams(window.location.search);
-  const code = urlParams.get("code");
-  const [data, setData] = useState(null);
-  const [isDisabled, setIsDisabled] = useState(false);
-
-  // useEffect(() => {
-  //   console.log("useEffect() for 'code' variable.");
-  //   const token = sessionStorage.getItem("githubToken");
-
-
-  //   if (token) {
-  //     console.log("Has token, getting authorization.");
-  //     const token = sessionStorage.getItem("githubToken");
-  //     axios.get("https://api.github.com/user", {
-  //       headers: { Authorization: token },
-  //     }).then((response) => {
-  //       console.log(response.data);
-  //     }).catch((error) => {
-  //       console.error(error);
-  //       console.log("token didn't work")
-  //     });
-  //   } else if (code) {
-  //     console.log("Code: " + code);
-  //     axios.get(`/api/exchange-code-for-token`, {
-  //       params: {
-  //         code: code,
-  //         state: "YOUR_RANDOMLY_GENERATED_STATE",
-  //       },
-  //     }).then((response) => {
-  //       const data = response.data;
-  //       setData(data);
-  //       sessionStorage.setItem("githubToken", `${data.token_type} ${data.access_token}`);
-  //     }).catch((error) => {
-  //       console.error("Axios Error:", error);
-  //     })
-  //   }
-  // }, [code]);
 
   function githubLoginRedirect() {
     console.log("Clicked GitHub login button, sending GitHub login request.");
@@ -64,14 +25,6 @@ const GithubLogin = () => {
               popup.close(); // Auto-close the popup
             }
           }, false);
-
-          // Check to see if the window closed before receiving the code.
-          const checkPopup = setInterval(() => {
-            if (!popup || popup.closed) {
-              clearInterval(checkPopup);
-              if (!codeReceived) console.log("OAuth flow not completed.");
-            }
-          }, 1000);
 
         } else {
           console.log("Error within backend function /login/github")

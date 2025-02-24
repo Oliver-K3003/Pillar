@@ -12,6 +12,7 @@ import fullLogo from "./assets/pillar_logo_full.svg";
 import collapseIcon from "./assets/collapse-icon.svg";
 import expandIcon from "./assets/expand-icon.svg";
 import GithubLogin from "./components/GithubLogin";
+import GithubUser from "./components/GithubUser.jsx";
 
 /* 
 TODO
@@ -34,6 +35,7 @@ function App() {
         <Router>
             <div className="container">
                 <GithubLogin />
+                <GithubUser />
                 <div className="sideNav">
                     <Sidebar collapsed={isSideNavCollapsed}>
                         <div className="sideNavHeader">
