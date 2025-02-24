@@ -6,10 +6,12 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/exchange-code-for-token': {
+      // Any request that goes to /api will be redirected to the flask server.
+      '/api/': {
         target: 'http://localhost:5000',
         changeOrigin: true,
         secure: false,
+        rewrite: (path) => path.replace(/^\/api/, '') // Remove '/api' prefix before forwarding
       },
     },
   }
