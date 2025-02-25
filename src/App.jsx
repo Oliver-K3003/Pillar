@@ -12,6 +12,7 @@ import deleteIcon from './assets/delete-button.svg';
 import collapseIcon from "./assets/collapse-icon.svg";
 import expandIcon from "./assets/expand-icon.svg";
 import GithubLogin from "./components/GithubLogin";
+import GithubUser from "./components/GithubUser.jsx";
 
 /* 
 TODO
@@ -34,6 +35,7 @@ function App() {
         <Router>
             <div className="container">
                 <GithubLogin />
+                <GithubUser />
                 <div className="sideNav">
                     <Sidebar collapsed={isSideNavCollapsed}>
                         <div className="sideNavHeader">
@@ -49,8 +51,10 @@ function App() {
                                 if (level === 0 || level === 1) {
                                     return {
                                         transition: "backgroundColor 200ms ease-in-out",
+                                        zIndex: "100",
                                         "&:hover": {
                                             backgroundColor: "#403f3f !important",
+                                            zIndex: "100"
                                         }
                                     }
                                 }
