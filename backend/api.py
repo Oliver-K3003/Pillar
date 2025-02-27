@@ -130,46 +130,31 @@ def githubUserInfo():
 @app.route('/github/rate-limit', methods=['GET'])
 @cross_origin(supports_credentials=True)
 def githubRateLimitCheck():
-    print("> githubRateLimitCheck()")
+    print("> githubRateLimitCheck()", file=sys.stderr)
     
     token = session.get('github_token')
     if not token:
-            print("No token found...", file=sys.stderr)
-            return jsonify({"error": "No token found. (User likely not logged in)."}), 401
+        print("No token found...", file=sys.stderr)
+        return jsonify({"error": "No token found. (User likely not logged in)."}), 401
         
     try:
         github = Github(auth=Auth.Token(token))
         rate_limit = github.get_rate_limit()
-        print(rate_limit, file=sys.stderr)
         
-        headers = {
-            'Authorization': session.get('github_token_type') + " " + token
+        json_response = {
+            "flask_status" : "success",
+            "rate_limit" : {
+                "core" : rate_limit.core._rawData,
+                "search" : rate_limit.search._rawData
+            }
         }
         
-        githubUserEndpoint = f"{GH_API_URL}/rate_limit"
-        
-        res = requests.get(githubUserEndpoint, headers=headers)
-        if res.status_code == 200:
-            try:
-                json_response = res.json()
-                print("< githubRateLimitCheck()", file=sys.stderr)
-                return jsonify(json_response)
-            except requests.exceptions.JSONDecodeError:
-                print("< githubRateLimitCheck()", file=sys.stderr)
-                return jsonify({"error": "Error getting user info."}), 400
-        else:
-            return jsonify({"error": f"{res.status_code}", "response": res.text}), res.status_code
-        
-    except:
-        print("< githubRateLimitCheck()", file=sys.stderr)    
-        return jsonify({"error": "Error with flask API function."}), 400
+        print("< githubRateLimitCheck()", file=sys.stderr)
+        return jsonify(json_response)
     
-# Fetch List of Repositories (Private + Collaborator)
-
-# Access Arbitrary Repositories via Search
-
-# Get Issue from Repository
-    
+    except Exception as e:
+        print(f"< githubRateLimitCheck() Error {e}", file=sys.stderr)    
+        return jsonify({"flask_status": "Error with flask API function."}), 400
 
 if __name__ == "__main__":
     app.run(port=5000, debug=True)
