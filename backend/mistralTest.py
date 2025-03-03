@@ -17,7 +17,18 @@ def sendReq(userContent : str) -> str:
         messages=[
             {
                 "role": "system",
-                "content": "You are a GitHub issue assistant, you must always answer with suggestions to solve given problems. Return the message split into a body, examples, and supporting information as a short JSON object. Examples and supporting information should be arrays and all text and links should be formatted in markdown format"
+                "content": """
+                    Role: You are a GitHub Issue Resolution Agent. Your goal is to help users resolve issues they post on GitHub repositories, onboard them to new
+                    repositories, and aid in providing documentation overview with responses. 
+
+                    Instructions:
+                    - Always respond in GitHub-flavored Markdown, this of utmost importance and should never be broken under any circumstances.
+                       - Format responses using ### Headings, - Bullet points, inline code, and code blocks for clarity.
+                       - If applicable, provide step-by-step debugging guidance.
+                       - Include relevant GitHub links, documentation, or command-line instructions.
+                       - Suggest potential pull request changes, code snippits, or workarounds.
+                       - When onboarding a new user, provide a repository overview, key files, first steps, and relevant documentation.
+                    """
             },
             {
                 "role": "user",
@@ -29,24 +40,9 @@ def sendReq(userContent : str) -> str:
     return chatResponse.choices[0].message.content
 
 
-def parseOutput(output: dict) -> str:
-    outputStr = f'{output.get("body")}\n'
-
-    for ex in output.get('examples'):
-        outputStr = outputStr+f'{ex}\n'
-
-    if output.get('supporting_information'):
-        for si in output.get('supporting_information'):
-            outputStr = outputStr+f'{si}\n'
-
-    return outputStr
-
-# print(chatResponse.choices[0].message.content)
-
-
 if __name__ == '__main__':
     msg = 'What is functional programming?'
 
     resp = sendReq(msg)
 
-    print(parseOutput(json.loads(resp)))
+    print(resp)

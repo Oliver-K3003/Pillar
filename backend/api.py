@@ -2,16 +2,18 @@ import json
 import sys
 from flask import Flask, jsonify, request, redirect, session
 from flask_cors import CORS, cross_origin
-from mistralTest import sendReq, parseOutput
+from mistralTest import sendReq
 import requests
+import secrets
 
 GH_CLIENT_ID = "Ov23lipp1FKM5Lltmvw0"
 GH_CLIENT_SECRET = "generate one" # probably not good idea to leave this here lol
-FLASK_SECRET = "generate one" # or this
+FLASK_SECRET = secrets.token_hex()
 
 app = Flask(__name__)
 app.secret_key = FLASK_SECRET
 CORS(app, supports_credentials=True)
+
 
 @app.route('/get-resp', methods=['POST'])
 @cross_origin(supports_credentials=True)
@@ -19,8 +21,7 @@ def getResp():
     data = request.json
     prompt = data.get('prompt', 'No Prompt Given')
     # will be filled in with function to gather resp
-    promptResponse = json.loads(sendReq(prompt))
-    promptResponse = parseOutput(promptResponse)
+    promptResponse = sendReq(prompt)
     return promptResponse
 
 
@@ -30,15 +31,15 @@ def getResp():
 @cross_origin(supports_credentials=True)
 def githubLoginRequest():
     print("> githubLoginRequest()", file=sys.stderr)
-    
+
     redirect_uri = request.host_url + "login/github/callback"
     scope = "read:user repo" # need to access user repos
-    
+
     github_auth_code_url = (
         f"https://github.com/login/oauth/authorize?"
         f"client_id={GH_CLIENT_ID}&redirect_uri={redirect_uri}&scope={scope}"
     )
-    
+
     try:
         print("Redirecting to GitHub.", file=sys.stderr)
         print("< githubLoginRequest()", file=sys.stderr)
@@ -93,6 +94,7 @@ def githubLoginCallback():
         else:
             return jsonify({"error": f"{res.status_code}", "response": res.text}), res.status_code
 
+
 # Github Data Access Endpoints
 @app.route('/github/user-info', methods=['GET'])
 @cross_origin(supports_credentials=True)
@@ -106,9 +108,9 @@ def githubUserInfo():
         headers = {
             'Authorization': token
         }
-        
+
         githubUserEndpoint = "https://api.github.com/user"
-        
+
         res = requests.get(githubUserEndpoint, headers=headers)
         if res.status_code == 200:
             try:
@@ -120,11 +122,10 @@ def githubUserInfo():
                 return jsonify({"error": "Error getting user info."}), 400
         else:
             return jsonify({"error": f"{res.status_code}", "response": res.text}), res.status_code
-        
+
     except:
         print("< githubUserInfo()", file=sys.stderr)    
         return jsonify({"error": "Error with flask API function."}), 400
 
 if __name__ == "__main__":
     app.run(port=5000, debug=True)
-    
