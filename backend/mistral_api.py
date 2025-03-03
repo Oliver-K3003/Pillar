@@ -1,23 +1,23 @@
 import os
 import json
+import sys
 from mistralai import Mistral
 from dotenv import load_dotenv
 
 def sendReq(userContent : str) -> str:
     load_dotenv()  # Load the .env file
 
-    apiKey = os.environ.get('MISTRAL_API_KEY', 'BROKEN')
-    print(apiKey)
+    MISTRAL_API_KEY = os.environ.get('MISTRAL_API_KEY', 'BROKEN')
+    client = Mistral(api_key=MISTRAL_API_KEY)
+    
     model="open-mistral-nemo"
-
-    client = Mistral(api_key=apiKey)
 
     chatResponse = client.chat.complete(
         model=model,
         messages=[
             {
                 "role": "system",
-                "content": "You are a GitHub issue assistant, you must always answer with suggestions to solve given problems. Return the message split into a body, examples, and supporting information as a short JSON object. Examples and supporting information should be arrays and all text and links should be formatted in markdown format"
+                "content": "You are a GitHub issue assistant, you must always answer with suggestions to solve given problems. Return the message split into a body, examples, and supporting information as a short JSON object. Examples and supporting information should be arrays and all text and links should be formatted in markdown format."
             },
             {
                 "role": "user",

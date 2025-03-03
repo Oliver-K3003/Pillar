@@ -1,16 +1,17 @@
 import json
+import os
 import sys
 from flask import Flask, jsonify, request, session
 from flask_cors import CORS, cross_origin
-from mistralTest import sendReq, parseOutput
+from mistral_api import sendReq, parseOutput
 import requests
 from github import Github, Auth
+from dotenv import load_dotenv
 
-GH_API_URL = "https://api.github.com"
-GH_CLIENT_ID = "Ov23lipp1FKM5Lltmvw0"
-GH_CLIENT_SECRET = "" # probably not good idea
-FLASK_SECRET = "" # or this
-
+load_dotenv()
+GH_CLIENT_ID = os.environ.get('GH_CLIENT_ID', 'BROKEN')
+GH_CLIENT_SECRET = os.environ.get('GH_CLIENT_SECRET', 'BROKEN')
+FLASK_SECRET = os.environ.get('FLASK_SECRET', 'BROKEN')
 
 app = Flask(__name__)
 app.secret_key = FLASK_SECRET
@@ -155,6 +156,47 @@ def githubRateLimitCheck():
     except Exception as e:
         print(f"< githubRateLimitCheck() Error {e}", file=sys.stderr)    
         return jsonify({"flask_status": "Error with flask API function."}), 400
+    
+# API to get list of repositories from Github associated with user.
+@app.route('/github/get-user-repos', methods=['GET'])
+@cross_origin(supports_credentials=True)
+def githubUserRepos():
+    print("> githubUserRepos()", file=sys.stderr)
+
+    token = session.get('github_token')
+    if not token:
+        print("No token found...", file=sys.stderr)
+        return jsonify({"error": "No token found. (User likely not logged in)."}), 401
+    
+    try:
+        github = Github(auth=Auth.Token(token))
+        github_user_repos = github.get_user().get_repos()
+        user_repos = []
+        for r in github_user_repos:
+            user_repos.append({
+                "name" : r.name,
+                "owner_login" : r.owner.login,
+                "description" : r.description,
+                "html_url" : r.html_url,
+            })
+
+        json_response = {
+            "flask_status" : "success",
+            "repos" : user_repos
+        }
+        
+        print("< githubUserRepos()", file=sys.stderr)
+        return jsonify(json_response)
+    
+    except Exception as e:
+        print(f"< githubUserRepos() Error {e}", file=sys.stderr)    
+        return jsonify({"flask_status": "Error with flask API function."}), 400
+
+
+# data = request.json
+#     prompt = data.get('prompt', 'No Prompt Given')
+
+
 
 if __name__ == "__main__":
     app.run(port=5000, debug=True)

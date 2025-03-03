@@ -13,7 +13,7 @@ import collapseIcon from "./assets/collapse-icon.svg";
 import expandIcon from "./assets/expand-icon.svg";
 import GithubLogin from "./components/GithubLogin";
 import GithubUser from "./components/GithubUser.jsx";
-import GithubRateLimit from "./components/GithubRateLimit.jsx";
+import GithubButton from "./components/GithubButton.jsx";
 
 /* 
 TODO
@@ -37,7 +37,7 @@ function App() {
             <div className="container">
                 <GithubLogin />
                 <GithubUser />
-                <GithubRateLimit/>
+                <GithubButton/>
                 <div className="sideNav">
                     <Sidebar collapsed={isSideNavCollapsed}>
                         <div className="sideNavHeader">
