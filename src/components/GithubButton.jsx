@@ -1,26 +1,26 @@
 import axios from "axios";
 
-const GithubUser = () => {
+const GithubButton = () => {
   // Get return code to get token form GitHub.
   const urlParams = new URLSearchParams(window.location.search);
 
-  function getGithubUser() {
+  function getGithubRateLimit() {
 
-    axios.get(`/api/github/user-info`)
+    axios.get(`/api/github/get-user-repos`)
       .then((response) => {
-        console.log(response.data);
+        console.log(response);
       })
       .catch((error) => {
-        console.error("Axios error with request to /github/user-info");
+        console.error("Axios error with request to /github/rate-limit");
       });
   }
 
   return (
     <>
       {/* Send request to backend to check if we're already logged in (ie. have token in this session.) */}
-      <button onClick={getGithubUser} className="github-user">Print Github User Info to Console</button>
+      <button onClick={getGithubRateLimit} className="github-rate-limit">Test</button>
     </>
   )
 }
 
-export default GithubUser;
+export default GithubButton;

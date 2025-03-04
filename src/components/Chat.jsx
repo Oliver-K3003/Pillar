@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams } from 'react-router-dom';
+import ReactMarkdown from 'react-markdown';
 import axios from "axios";
 import submitArrow from "../assets/submit_arrow.svg";
 import fullLogo from "../assets/pillar_logo_full.svg";
@@ -39,10 +40,12 @@ export const Chat = () => {
         let newMsgs = [...msgs, { "usr": msgVal }];
 
         setMsgs(newMsgs);
+
         // get response from API server
         axios
             .post("http://localhost:5000/get-resp", { prompt: msgVal })
             .then((resp) => {
+                console.log(resp.data)
                 // deep copy of resp msg list
                 // add new data to list
                 newMsgs = [...newMsgs, { "res": resp.data }];
@@ -87,7 +90,9 @@ export const Chat = () => {
                 <div
                     className="resp-msg msg"
                 >
-                    {contents}
+                    <ReactMarkdown components={{ p : "span" }}>
+                        {contents}
+                    </ReactMarkdown>
                     {!finishedMsg &&
                         <svg
                             viewBox="8 0 8 16"

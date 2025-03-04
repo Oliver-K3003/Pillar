@@ -1,18 +1,24 @@
 import json
+import os
 import sys
-from flask import Flask, jsonify, request, redirect, session
+from flask import Flask, jsonify, request, session
 from flask_cors import CORS, cross_origin
-from mistralTest import sendReq, parseOutput
+from mistral_api import sendReq
 import requests
 from db import add_new_user
+from github import Github, Auth
+from dotenv import load_dotenv
+import secrets
 
-GH_CLIENT_ID = "Ov23lipp1FKM5Lltmvw0"
-GH_CLIENT_SECRET = "generate one" # probably not good idea to leave this here lol
-FLASK_SECRET = "generate one" # or this
+load_dotenv()
+GH_CLIENT_ID = os.environ.get('GH_CLIENT_ID', 'BROKEN')
+GH_CLIENT_SECRET = os.environ.get('GH_CLIENT_SECRET', 'BROKEN')
+FLASK_SECRET = secrets.token_hex()
 
 app = Flask(__name__)
 app.secret_key = FLASK_SECRET
 CORS(app, supports_credentials=True)
+
 
 @app.route('/get-resp', methods=['POST'])
 @cross_origin(supports_credentials=True)
@@ -20,10 +26,8 @@ def getResp():
     data = request.json
     prompt = data.get('prompt', 'No Prompt Given')
     # will be filled in with function to gather resp
-    promptResponse = json.loads(sendReq(prompt))
-    promptResponse = parseOutput(promptResponse)
+    promptResponse = sendReq(prompt)
     return promptResponse
-
 
 # Authentication Endpoints
 # Called by login button, redirect to GitHub login page.
@@ -31,15 +35,15 @@ def getResp():
 @cross_origin(supports_credentials=True)
 def githubLoginRequest():
     print("> githubLoginRequest()", file=sys.stderr)
-    
+
     redirect_uri = request.host_url + "login/github/callback"
     scope = "read:user repo" # need to access user repos
-    
+
     github_auth_code_url = (
         f"https://github.com/login/oauth/authorize?"
         f"client_id={GH_CLIENT_ID}&redirect_uri={redirect_uri}&scope={scope}"
     )
-    
+
     try:
         print("Redirecting to GitHub.", file=sys.stderr)
         print("< githubLoginRequest()", file=sys.stderr)
@@ -52,6 +56,7 @@ def githubLoginRequest():
         print("< githubLoginRequest()", file=sys.stderr)
         return jsonify({"status": "Error"})
 
+# Callback function; getting token from code.
 @app.route('/login/github/callback', methods=['GET'])
 @cross_origin(supports_credentials=True)
 def githubLoginCallback():
@@ -78,8 +83,8 @@ def githubLoginCallback():
             try:
                 json_response = res.json()
                 print(json_response, file=sys.stderr)
-                token_str = ' '.join([json_response['token_type'], json_response['access_token']])
-                session['github_token'] = token_str
+                session['github_token'] = json_response['access_token']
+                session['github_token_type'] = json_response['token_type']
                 print("< githubLoginCallback()", file=sys.stderr)
                 return f"""
                     <script>
@@ -94,51 +99,107 @@ def githubLoginCallback():
         else:
             return jsonify({"error": f"{res.status_code}", "response": res.text}), res.status_code
 
+
 # Github Data Access Endpoints
+# User Information
 @app.route('/github/user-info', methods=['GET'])
 @cross_origin(supports_credentials=True)
 def githubUserInfo():
     print("> githubUserInfo()", file=sys.stderr)
+    
     token = session.get('github_token')
-    try:
-        if not token:
+    if not token:
             print("No token found...", file=sys.stderr)
-            return jsonify({"error": "No token found."}), 400
-        headers = {
-            'Authorization': token
+            return jsonify({"error": "No token found. (User likely not logged in)."}), 401
+
+    try:
+        github = Github(auth=Auth.Token(token))
+        user = github.get_user()
+        
+        json_response = {
+            "flask_status" : "success",
+            "avatar_url" : user.avatar_url,
+            "html_url" : user.html_url,
+            "login" : user.login,
         }
         
-        githubUserEndpoint = "https://api.github.com/user"
-        
-        res = requests.get(githubUserEndpoint, headers=headers)
-        if res.status_code == 200:
-            try:
-                json_response = res.json()
-                print("< githubUserInfo()", file=sys.stderr)
-                return jsonify(json_response)
-            except requests.exceptions.JSONDecodeError:
-                print("< githubUserInfo()", file=sys.stderr)
-                return jsonify({"error": "Error getting user info."}), 400
-        else:
-            return jsonify({"error": f"{res.status_code}", "response": res.text}), res.status_code
-        
-    except:
-        print("< githubUserInfo()", file=sys.stderr)    
-        return jsonify({"error": "Error with flask API function."}), 400
-
-@app.route('/add-user', methods=["POST"])
+        print("< githubUserInfo()", file=sys.stderr)
+        return jsonify(json_response)
+    
+    except Exception as e:
+        print(f"< githubUserInfo() Error {e}", file=sys.stderr)    
+        return jsonify({"flask_status": "Error with flask API function."}), 400
+    
+# API to Check Rate Limits (Also can be used to check token validity)
+@app.route('/github/rate-limit', methods=['GET'])
 @cross_origin(supports_credentials=True)
-def add_user():
-    data = request.json
-    username = data.get("username")
-    accesstoken = data.get("accesstoken") or None  # Avoid null issues
+def githubRateLimitCheck():
+    print("> githubRateLimitCheck()", file=sys.stderr)
+    
+    token = session.get('github_token')
+    if not token:
+        print("No token found...", file=sys.stderr)
+        return jsonify({"error": "No token found. (User likely not logged in)."}), 401
+        
+    try:
+        github = Github(auth=Auth.Token(token))
+        rate_limit = github.get_rate_limit()
+        
+        json_response = {
+            "flask_status" : "success",
+            "rate_limit" : {
+                "core" : rate_limit.core._rawData,
+                "search" : rate_limit.search._rawData
+            }
+        }
+        
+        print("< githubRateLimitCheck()", file=sys.stderr)
+        return jsonify(json_response)
+    
+    except Exception as e:
+        print(f"< githubRateLimitCheck() Error {e}", file=sys.stderr)    
+        return jsonify({"flask_status": "Error with flask API function."}), 400
+    
+# API to get list of repositories from Github associated with user.
+@app.route('/github/get-user-repos', methods=['GET'])
+@cross_origin(supports_credentials=True)
+def githubUserRepos():
+    print("> githubUserRepos()", file=sys.stderr)
 
-    if not username:
-        return jsonify({"error": "Username is required"}), 400
+    token = session.get('github_token')
+    if not token:
+        print("No token found...", file=sys.stderr)
+        return jsonify({"error": "No token found. (User likely not logged in)."}), 401
+    
+    try:
+        github = Github(auth=Auth.Token(token))
+        github_user_repos = github.get_user().get_repos()
+        user_repos = []
+        for r in github_user_repos:
+            user_repos.append({
+                "name" : r.name,
+                "owner_login" : r.owner.login,
+                "description" : r.description,
+                "html_url" : r.html_url,
+            })
 
-    add_new_user(username, accesstoken)
+        json_response = {
+            "flask_status" : "success",
+            "repos" : user_repos
+        }
+        
+        print("< githubUserRepos()", file=sys.stderr)
+        return jsonify(json_response)
+    
+    except Exception as e:
+        print(f"< githubUserRepos() Error {e}", file=sys.stderr)    
+        return jsonify({"flask_status": "Error with flask API function."}), 400
+
+
+# data = request.json
+#     prompt = data.get('prompt', 'No Prompt Given')
+
 
 
 if __name__ == "__main__":
     app.run(port=5000, debug=True)
-    
