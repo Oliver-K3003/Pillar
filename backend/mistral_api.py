@@ -1,16 +1,16 @@
 import os
 import json
+import sys
 from mistralai import Mistral
 from dotenv import load_dotenv
 
 def sendReq(userContent : str) -> str:
     load_dotenv()  # Load the .env file
 
-    apiKey = os.environ.get('MISTRAL_API_KEY', 'BROKEN')
-    print(apiKey)
+    MISTRAL_API_KEY = os.environ.get('MISTRAL_API_KEY', 'BROKEN')
+    client = Mistral(api_key=MISTRAL_API_KEY)
+    
     model="open-mistral-nemo"
-
-    client = Mistral(api_key=apiKey)
 
     chatResponse = client.chat.complete(
         model=model,
