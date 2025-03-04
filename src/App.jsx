@@ -1,10 +1,11 @@
 // style sheet imports
 import "./App.css";
 // general imports
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sidebar, Menu, MenuItem, SubMenu } from "react-pro-sidebar";
 import { BrowserRouter as Router, Routes, Route, Link, useParams } from "react-router-dom";
 import { Chat } from './components/Chat.jsx';
+import axios from "axios";
 // asset imports
 import newChat from './assets/chat-add-icon.svg'
 import fullLogo from "./assets/pillar_logo_full.svg";
@@ -14,7 +15,6 @@ import expandIcon from "./assets/expand-icon.svg";
 import GithubLogin from "./components/GithubLogin";
 import GithubUser from "./components/GithubUser.jsx";
 import GithubButton from "./components/GithubButton.jsx";
-
 /* 
 TODO
   [ ] iron out profile pictures (not sure if we want user to have one)
@@ -25,11 +25,21 @@ TODO
 
 function App() {
     const [isSideNavCollapsed, setSideNavCollapsed] = useState(false);
-    const [chatIds, setChatIds] = useState([0]);
+    const [chatIds, setChatIds] = useState([]);
+    const [user, setUser] = useState("");
+
+    useEffect(() => {
+        axios.get(`/api/github/user-info`)
+            .then((response) => {
+             setUser(response.data.login);
+      })
+    }, [])
 
     const createNewChat = () => {
-        const currId = chatIds[chatIds.length - 1];
-        setChatIds([...chatIds, currId + 1]);
+        axios.post(`/api/conversation/create`, {username: user})
+            .then((response) => {
+                setChatIds([...chatIds, response.data.id])
+            })
     }
 
     return (
@@ -67,7 +77,7 @@ function App() {
                                 {chatIds.map((id) =>
                                     <MenuItem key={id} id={id}>
                                         <div className="menuItemContainer">
-                                            <Link className="chat-link" to={`/chat/${id}`}>Chat {id + 1}</Link>
+                                            <Link className="chat-link" to={`/chat/${id}`}>Chat {id}</Link>
                                             <button className="headerButton"><img className="headerButtonIcon" src={deleteIcon} /></button>
                                         </div>
                                     </MenuItem>

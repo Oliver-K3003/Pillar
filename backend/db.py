@@ -1,6 +1,7 @@
 from platform import release
 from psycopg2 import pool
 from flask import jsonify
+import sys
 
 PG_URI="dbname=pillar user=postgres password=pillar host=localhost port=5432"
 
@@ -39,20 +40,21 @@ def upsert_user(username, accesstoken):
         cursor.close()
         release_connection(conn)
 
-def insert_new_conversation(prompt, response, chatId, username):
+def insert_new_conversation(username):
     conn = get_connection()
     cursor = conn.cursor()
 
     try:
-        cursor.execute("INSERT INTO conversations (prompt, response, conversationid, username) VALUES (%s, %s, %s, %s) RETURNING id", (prompt, response, chatId, username))
+        cursor.execute("INSERT INTO conversations (username) VALUES (%s) RETURNING id", (username,))
         id = cursor.fetchone()[0]
         conn.commit()
 
-        return jsonify({"message": "Conversation added successfully", "id": id}), 200
+        return id
 
     except Exception as e:
         conn.rollback()
-        return jsonify({"error": str(e)}), 500
+        print(f"Error inserting new conversation into database {str(e)}", file=sys.stderr)
+        return None
     
     finally:
         cursor.close()

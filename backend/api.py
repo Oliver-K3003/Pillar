@@ -5,17 +5,15 @@ from flask import Flask, jsonify, request, session
 from flask_cors import CORS, cross_origin
 from mistral_api import sendReq
 import requests
-from db import upsert_user
+from db import upsert_user, insert_new_conversation
 from github import Github, Auth
 from dotenv import load_dotenv
 import secrets
 
 load_dotenv()
-GH_CLIENT_ID = os.environ.get('GH_CLIENT_ID', 'BROKEN')
-GH_CLIENT_SECRET = os.environ.get('GH_CLIENT_SECRET', 'BROKEN')
-FLASK_SECRET = secrets.token_hex()
-
-
+# GH_CLIENT_ID = os.environ.get('GH_CLIENT_ID', 'BROKEN')
+# GH_CLIENT_SECRET = os.environ.get('GH_CLIENT_SECRET', 'BROKEN')
+# FLASK_SECRET = secrets.token_hex()
 app = Flask(__name__)
 app.secret_key = FLASK_SECRET
 CORS(app, supports_credentials=True)
@@ -196,6 +194,7 @@ def githubUserRepos():
         print(f"< githubUserRepos() Error {e}", file=sys.stderr)    
         return jsonify({"flask_status": "Error with flask API function."}), 400
 
+# Add or update a user's record
 @app.route('/user/add-or-update', methods=["POST"])
 @cross_origin(support_credentials=True)
 def upsertUser():
@@ -212,8 +211,20 @@ def upsertUser():
     else:
         return jsonify({"message": "There was a problem inserting or updating the user's record"}), 400
 
-# data = request.json
-#     prompt = data.get('prompt', 'No Prompt Given')
+@app.route('/conversation/create', methods=["POST"])
+@cross_origin(support_credentials=True)
+def createNewConversation():
+    data = request.json
+    username = data.get("username");
+
+    print("> createNewConversation()", file=sys.stderr)
+    id = insert_new_conversation(username)
+    print("< createNewConversation()", file=sys.stderr)
+
+    if id:
+        return jsonify({"message": "Successfully created new conversation", "id": id}), 200
+    else:
+        return jsonify({"message": "There was a problem creating a new conversation"}), 400
 
 
 
