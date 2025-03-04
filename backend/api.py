@@ -5,7 +5,7 @@ from flask import Flask, jsonify, request, session
 from flask_cors import CORS, cross_origin
 from mistral_api import sendReq
 import requests
-from db import add_new_user
+from db import upsert_user
 from github import Github, Auth
 from dotenv import load_dotenv
 import secrets
@@ -14,6 +14,7 @@ load_dotenv()
 GH_CLIENT_ID = os.environ.get('GH_CLIENT_ID', 'BROKEN')
 GH_CLIENT_SECRET = os.environ.get('GH_CLIENT_SECRET', 'BROKEN')
 FLASK_SECRET = secrets.token_hex()
+
 
 app = Flask(__name__)
 app.secret_key = FLASK_SECRET
@@ -36,7 +37,7 @@ def getResp():
 def githubLoginRequest():
     print("> githubLoginRequest()", file=sys.stderr)
 
-    redirect_uri = request.host_url + "login/github/callback"
+    redirect_uri = "http://localhost:5000/login/github/callback"
     scope = "read:user repo" # need to access user repos
 
     github_auth_code_url = (
@@ -94,7 +95,7 @@ def githubLoginCallback():
             except requests.exceptions.JSONDecodeError:
                 print("< githubLoginCallback()", file=sys.stderr)
                 return f"""
-                    <h1>Error with logging in.</h1>
+                    <h1>Error with logging in.</h1>npm
                 """
         else:
             return jsonify({"error": f"{res.status_code}", "response": res.text}), res.status_code
@@ -195,6 +196,21 @@ def githubUserRepos():
         print(f"< githubUserRepos() Error {e}", file=sys.stderr)    
         return jsonify({"flask_status": "Error with flask API function."}), 400
 
+@app.route('/user/add-or-update', methods=["POST"])
+@cross_origin(support_credentials=True)
+def upsertUser():
+    data = request.json
+    username = data.get('username')
+    accesstoken = session.get('github_token')
+
+    print("> upsertUser()", file=sys.stderr)
+    result = upsert_user(username, accesstoken)
+    print("< upsertUser()", file=sys.stderr)
+            
+    if result:
+        return jsonify({"message": "Successfully inserted/updated user"}), 200
+    else:
+        return jsonify({"message": "There was a problem inserting or updating the user's record"}), 400
 
 # data = request.json
 #     prompt = data.get('prompt', 'No Prompt Given')

@@ -1,6 +1,8 @@
+from platform import release
 from psycopg2 import pool
+from flask import jsonify
 
-PG_URI="dbname=pillar user=postgres password= host=localhost port=5432"
+PG_URI="dbname=pillar user=postgres password=pillar host=localhost port=5432"
 
 conn_pool = pool.SimpleConnectionPool(
     minconn=1,
@@ -15,21 +17,43 @@ def get_connection():
 def release_connection(conn):
     conn_pool.putconn(conn)
 
-def add_new_user(username, accesstoken):
+def upsert_user(username, accesstoken):
     conn = get_connection()
     cursor = conn.cursor()
 
     try:
-        cursor.execute("INSERT INTO users (username, accesstoken) VALUES (%s, %s) RETURNING id", (username, accesstoken))
+        cursor.execute("INSERT INTO users (username, accesstoken) VALUES (%s, %s)  ON CONFLICT (username) DO UPDATE SET accesstoken = EXCLUDED.accesstoken RETURNING id", (username, accesstoken))
         id = cursor.fetchone()[0]  
         conn.commit()  # Ensure changes are saved
-
-        return jsonify({"message": "User added successfully", "user_id": id}), 200
+        if id:
+            return True
+        else: 
+            return False
 
     except Exception as e:
         conn.rollback()
-        return jsonify({"error": str(e)}), 500  # Return actual error
+        print(f"Error inserting or updating user record: {str(e)}")
+        return False
 
+    finally:
+        cursor.close()
+        release_connection(conn)
+
+def insert_new_conversation(prompt, response, chatId, username):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("INSERT INTO conversations (prompt, response, conversationid, username) VALUES (%s, %s, %s, %s) RETURNING id", (prompt, response, chatId, username))
+        id = cursor.fetchone()[0]
+        conn.commit()
+
+        return jsonify({"message": "Conversation added successfully", "id": id}), 200
+
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"error": str(e)}), 500
+    
     finally:
         cursor.close()
         release_connection(conn)

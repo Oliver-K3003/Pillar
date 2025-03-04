@@ -1,6 +1,8 @@
 import axios from "axios";
+import { useState } from 'react';
 
 const GithubLogin = () => {
+  const [user, setUser] = useState(null);
 
   function githubLoginRedirect() {
     console.log("Clicked GitHub login button, sending GitHub login request.");
@@ -33,6 +35,13 @@ const GithubLogin = () => {
       .catch((error) => {
         console.error("Axios error with request to /login/github");
       });
+
+    axios.get(`/api/github/user-info`)
+      .then((response) => {
+        setUser(response.data.login);
+      })
+      
+    axios.post(`api/user/add-or-update`, {username: user})
   }
 
   return (

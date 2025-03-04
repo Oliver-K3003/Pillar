@@ -8,10 +8,10 @@ const GithubUser = () => {
 
     axios.get(`/api/github/user-info`)
       .then((response) => {
-        console.log(response.data);
+        console.log(response.data.login);
       })
       .catch((error) => {
-        console.error("Axios error with request to /github/user-info");
+        console.error("Axios error with request to /login/github");
       });
   }
 
