@@ -1,15 +1,13 @@
 import os
-import json
-import sys
 from mistralai import Mistral
 from dotenv import load_dotenv
 
-def sendReq(userContent : str) -> str:
+def sendReq(userContent: str) -> str:
     load_dotenv()  # Load the .env file
 
     MISTRAL_API_KEY = os.environ.get('MISTRAL_API_KEY', 'BROKEN')
     client = Mistral(api_key=MISTRAL_API_KEY)
-    
+
     model="open-mistral-nemo"
 
     chatResponse = client.chat.complete(
@@ -22,7 +20,7 @@ def sendReq(userContent : str) -> str:
                     repositories, and aid in providing documentation overview with responses. 
 
                     Instructions:
-                    - Always respond in GitHub-flavored Markdown, this of utmost importance and should never be broken under any circumstances.
+                       - Always respond in GitHub-flavored Markdown, this of utmost importance and should never be broken under any circumstances.
                        - Format responses using ### Headings, - Bullet points, inline code, and code blocks for clarity.
                        - If applicable, provide step-by-step debugging guidance.
                        - Include relevant GitHub links, documentation, or command-line instructions.

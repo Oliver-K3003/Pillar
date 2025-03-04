@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import axios from "axios";
@@ -15,7 +15,7 @@ export const Chat = () => {
         const savedMsgs = window.sessionStorage.getItem(`${key}`);
         return savedMsgs ? JSON.parse(savedMsgs) : [];
     });
-    const [msgVal, setMsgVal] = useState("");
+    const msgVal = useRef();
 
     useEffect(() => {
         const savedMsgs = sessionStorage.getItem(`${key}`);
@@ -27,23 +27,21 @@ export const Chat = () => {
         window.sessionStorage.setItem(`${key}`, JSON.stringify(msgs));
     }, [msgs, chatId])
 
-    const handleInput = (e) => {
-        setMsgVal(e.target.value);
-    };
-
     const getResp = (e) => {
         e.preventDefault();
+
+        const currMsg = msgVal.current.value;
 
         e.target.querySelector("input").value = "";
 
         // create deep copy
-        let newMsgs = [...msgs, { "usr": msgVal }];
+        let newMsgs = [...msgs, { "usr": currMsg }];
 
         setMsgs(newMsgs);
 
         // get response from API server
         axios
-            .post("http://localhost:5000/get-resp", { prompt: msgVal })
+            .post("http://localhost:5000/get-resp", { prompt: currMsg })
             .then((resp) => {
                 console.log(resp.data)
                 // deep copy of resp msg list
@@ -90,7 +88,7 @@ export const Chat = () => {
                 <div
                     className="resp-msg msg"
                 >
-                    <ReactMarkdown components={{ p : "span" }}>
+                    <ReactMarkdown components={{ p: "span" }}>
                         {contents}
                     </ReactMarkdown>
                     {!finishedMsg &&
@@ -138,11 +136,13 @@ export const Chat = () => {
                 })}
             </div>
 
-            <form className="chat-bar" onSubmit={(e) => getResp(e)}>
+            <form className="chat-bar" onSubmit={(e) => {
+                getResp(e);
+            }}>
                 <input
                     type="text"
                     placeholder="Message Pillar"
-                    onChange={handleInput}
+                    ref={msgVal}
                 />
                 <button
                     type="button"
