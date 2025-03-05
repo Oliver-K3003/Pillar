@@ -40,8 +40,7 @@ export const Chat = () => {
         setMsgs(newMsgs);
 
         // get response from API server
-        axios
-            .post("http://localhost:5000/get-resp", { prompt: currMsg })
+        axios.post("/api/get-resp", { prompt: msgVal })
             .then((resp) => {
                 console.log(resp.data)
                 // deep copy of resp msg list

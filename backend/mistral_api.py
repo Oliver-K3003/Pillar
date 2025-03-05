@@ -2,7 +2,7 @@ import os
 from mistralai import Mistral
 from dotenv import load_dotenv
 
-def sendReq(userContent: str) -> str:
+def sendReq(userContent : str, githubToken : str) -> str:
     load_dotenv()  # Load the .env file
 
     MISTRAL_API_KEY = os.environ.get('MISTRAL_API_KEY', 'BROKEN')
@@ -22,7 +22,9 @@ def sendReq(userContent: str) -> str:
                     Instructions:
                        - Always respond in GitHub-flavored Markdown, this of utmost importance and should never be broken under any circumstances.
                        - Format responses using ### Headings, - Bullet points, inline code, and code blocks for clarity.
+                       - If the user is asking for help with their specific Github repositories, then you need to ask them for that information. Otherwise, you cannot hallucinate and make up repositories.
                        - If applicable, provide step-by-step debugging guidance.
+                       - You must give brief responses.
                        - Include relevant GitHub links, documentation, or command-line instructions.
                        - Suggest potential pull request changes, code snippits, or workarounds.
                        - When onboarding a new user, provide a repository overview, key files, first steps, and relevant documentation.
