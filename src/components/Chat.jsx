@@ -42,8 +42,7 @@ export const Chat = () => {
         setMsgs(newMsgs);
 
         // get response from API server
-        axios
-            .post("http://localhost:5000/get-resp", { prompt: msgVal })
+        axios.post("/api/get-resp", { prompt: msgVal })
             .then((resp) => {
                 console.log(resp.data)
                 // deep copy of resp msg list
@@ -90,7 +89,7 @@ export const Chat = () => {
                 <div
                     className="resp-msg msg"
                 >
-                    <ReactMarkdown components={{ p : "span" }}>
+                    <ReactMarkdown components={{ p: "span" }}>
                         {contents}
                     </ReactMarkdown>
                     {!finishedMsg &&
