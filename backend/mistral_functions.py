@@ -1,7 +1,10 @@
 import functools
 import logging
+import os
+from dotenv import load_dotenv
 from github import Github, Auth
 from mistralai import AssistantMessage
+load_dotenv()
 
 ##### Functions to Call Github #####
 def list_user_repos(github_token: str) -> str:
@@ -14,7 +17,7 @@ def list_user_repos(github_token: str) -> str:
 
     for repo in repos:
         # Use repo.html_url
-        repo_list.append({"name": repo.name, "url": repo.html_url})
+        repo_list.append({"name": repo.name, "owner" : repo.owner.login, "url": repo.html_url})
 
     logging.info("< list_user_repos()")
     return {
@@ -23,15 +26,13 @@ def list_user_repos(github_token: str) -> str:
     }
 
 
-def list_repo_issues(github_token: str, repo_name: str) -> str:
+def list_repo_issues(github_token: str, repo_name: str, repo_owner: str) -> str:
     logging.info("> list_repo_issues()")
 
-    github = Github(auth=Auth.Token(github_token))
-    user = github.get_user()
-
     # Get the repository object
+    github = Github(auth=Auth.Token(github_token))
     try:
-        repo = user.get_repo(repo_name)
+        repo = github.get_repo(f"{repo_owner}/{repo_name}")
     except Exception as e:
         logging.error(f"Error fetching repo: {e}")
         return {
@@ -74,7 +75,6 @@ github_functions_dict = [
             "parameters": {
                 "type": "object",
                 "properties": {},
-                # "required": [],
             },
         },
     },
@@ -89,9 +89,13 @@ github_functions_dict = [
                     "repo_name": {
                         "type": "string",
                         "description": "The repository where to get issues from.",
+                    },
+                    "repo_owner": {
+                        "type": "string",
+                        "description": "The username of the owner of the repository from where to get issues from.",
                     }
                 },
-                "required": ["repo_name"],
+                "required": ["repo_name", "repo_owner"],
             },
         },
     }
@@ -127,3 +131,9 @@ def assistantmessage_to_dict(am: AssistantMessage) -> dict:
         am_val = i[1]
         assistantmessage_dict[am_key] = am_val
     return assistantmessage_dict
+
+
+if __name__ == '__main__':
+
+    GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN', None)
+    github = Github(auth=Auth.Token(GITHUB_TOKEN))
