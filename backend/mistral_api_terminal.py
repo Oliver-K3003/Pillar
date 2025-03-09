@@ -7,6 +7,30 @@ from mistralai import AssistantMessage, Mistral
 import mistral_functions
 load_dotenv()  # Load the .env file
 
+# SIMULATES BACKEND api.py
+# chat_input is the most recent chat msg sent by the user.
+# chat_history is the list of formatted previous messages.
+def sendReq(chat_input : str, chat_history : list) -> str:
+    logging.debug("============================== > sendReq() ==============================")
+    # After getting user input, structure it in a way that matches the chat history and then append it to chat history.
+    # the use_model function will automatically look at the last appended message as the most recent message.
+    chat_history.append({
+        "role": "user",
+        "content": chat_input
+    })
+    logging.info(f"Received message from user: {chat_history[-1]["content"]}")
+    # use_model will return the updated chat history, the latest message to return and show the user will be 
+    # the last one found in the chat history.
+    new_chat_history = use_model(chat_history=chat_history)
+        
+    assistantmessage_dict = mistral_functions.assistantmessage_to_dict(new_chat_history[-1])
+    chat_output = assistantmessage_dict['content']
+    
+    logging.info("\n========== Returning message to user: ==========")
+    logging.info(f"Message to be returned to user:\n{chat_output}")
+    logging.debug("============================== < sendReq() ==============================")
+    return chat_output, new_chat_history
+    
 def use_model(chat_history: list) -> str:
     logging.info("\n============================== > use_model() ==============================")
     # Tokens/API Keys
@@ -79,8 +103,15 @@ def use_model(chat_history: list) -> str:
         function_params["github_token"] = GITHUB_TOKEN # Inject the Github token into the function call.
         logging.info("Function Name: ", function_name, "Function Params: ", function_params)
         
-        function_result = mistral_functions.github_function_mapping[function_name](**function_params) # Run function.
-        logging.info(f"Function Results: {function_result}") 
+        try:
+            if function_name in mistral_functions.github_function_mapping:
+                function_result = mistral_functions.github_function_mapping[function_name](**function_params) # Run function.
+                logging.info(f"Function Results: {function_result}")
+            else:
+                function_result = {"error": f"Function '{function_name}' not implemented."}
+        except Exception as e:
+            function_result = {"error": f"An error occurred: {e}"}
+            logging.error(f"Exception in function {function_name}: {e}")
         
         # Append the "answer" to the chat history so that the model has context.
         chat_history.append({"role": "tool", "name": function_name, "content": json.dumps(function_result), "tool_call_id": tool_call.id})
@@ -93,31 +124,6 @@ def use_model(chat_history: list) -> str:
         return chat_history
     else:
         logging.info("Unspecified pathway for model logic.")
-
-        
-# SIMULATES BACKEND api.py       
-def sendReq(chat_input : str, chat_history : list) -> str:
-    logging.debug("============================== > sendReq() ==============================")
-    # After getting user input, structure it in a way that matches the chat history and then append it to chat history.
-    # the use_model function will automatically look at the last appended message as the most recent message.
-    chat_history.append({
-        "role": "user",
-        "content": chat_input
-    })
-    logging.info(f"Received message from user: {chat_history[-1]["content"]}")
-    # use_model will return the updated chat history, the latest message to return and show the user will be 
-    # the last one found in the chat history.
-    new_chat_history = use_model(chat_history=chat_history)
-        
-    assistantmessage_dict = mistral_functions.assistantmessage_to_dict(new_chat_history[-1])
-    chat_output = assistantmessage_dict['content']
-    
-    logging.info("\n========== Returning message to user: ==========")
-    logging.info(f"Message to be returned to user:\n{chat_output}")
-    logging.debug("============================== < sendReq() ==============================")
-    return chat_output, new_chat_history
-    
-    
 
 if __name__ == '__main__':
     # logging.basicConfig(level=logging.INFO)
