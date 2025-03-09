@@ -1,26 +1,8 @@
 import os
-import json
-import pandas as pd
 import sys
-from github import Github, Auth
-from mistralai import Mistral, Tool
+from mistralai import Mistral
 from dotenv import load_dotenv
-import functools
-
-# List user repositories.
-def list_user_repos(github_token : str) -> dict:
-    print("> list_user_repos()", file=sys.stderr)
-    print(github_token, file=sys.stderr)
-    github = Github(auth=Auth.Token(github_token))
-    user = github.get_user()
-    repos = user.get_repos()
-    
-    repo_list = []
-    for repo in repos:
-        repo_list.append({"name" : repo.name, "url" : repo.url})
-    
-    return {"status": "success", "repositories": repo_list}
-
+import mistral_functions
 
 def sendReq(userContent : str, githubToken : str) -> str:
     load_dotenv()  # Load the .env file
@@ -55,7 +37,7 @@ def sendReq(userContent : str, githubToken : str) -> str:
                 "content": userContent,
             },
         ],
-        tools=tools_with_args,
+        tools=mistral_functions.github_functions_dict,
         tool_choice="auto"
     )
     print(chatResponse, file=sys.stderr)
