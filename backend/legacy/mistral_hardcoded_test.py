@@ -26,13 +26,14 @@ def list_user_repos(github_token: str) -> str:
         "type": "repo_list",  # Discriminator field to prevent the Mistral error
         "repositories": repo_list
     }
-    
+
+
 def list_repo_issues(github_token: str, repo_name: str) -> str:
     print("> list_repo_issues()")
-    
+
     github = Github(auth=Auth.Token(github_token))
     user = github.get_user()
-    
+
     # Get the repository object
     try:
         repo = user.get_repo(repo_name)
@@ -100,25 +101,10 @@ names_to_functions = {
     'list_repo_issues': functools.partial(list_repo_issues)
 }
 
-if __name__ == '__main__':
-    load_dotenv()  # Load the .env file
-
-    
-    
-    
-    # Tokens/API Keys
-    MISTRAL_API_KEY = os.environ.get('MISTRAL_API_KEY', 'BROKEN')
-    GITHUB_TOKEN = os.enivron.get('GITHUB_TOKEN', 'BROKEN')
-
-    # Init Mistral
-    client = Mistral(api_key=MISTRAL_API_KEY)
-    model = "open-mistral-nemo"
-    chat_history = []
-    
-    # Model instructions.
-    model_instructions = {
-        "role": "system",
-        "content": """
+# Model instructions.
+model_instructions = {
+    "role": "system",
+    "content": """
             Role: You are a GitHub Issue Resolution Agent. Your goal is to help users resolve issues they post on GitHub repositories, onboard them to new
             repositories, and aid in providing documentation overview with responses. 
 
@@ -134,19 +120,31 @@ if __name__ == '__main__':
                - Suggest potential pull request changes, code snippits, or workarounds.
                - When onboarding a new user, provide a repository overview, key files, first steps, and relevant documentation.
             """
-    }
-    
+}
+
+if __name__ == '__main__':
+    load_dotenv()  # Load the .env file
+
+    # Tokens/API Keys
+    MISTRAL_API_KEY = os.environ.get('MISTRAL_API_KEY', 'BROKEN')
+    GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN', 'BROKEN')
+
+    # Init Mistral
+    client = Mistral(api_key=MISTRAL_API_KEY)
+    model = "open-mistral-nemo"
+    chat_history = []
+
     # Initialize the messages array with model instructions.
     chat_history.append(model_instructions)
-    
+
     # Message 1 to system.
     chat_history.append(
-        {   
+        {
             "role": "user",
             "content": "Can I get a list of my repositories?"
         }
     )
-    
+
     # Get response for message 1.
     response = client.chat.complete(
         model=model,
@@ -154,12 +152,13 @@ if __name__ == '__main__':
         tools=tools,
         tool_choice="auto",
     )
-    
+
     # Response analysis
     print("ChatCompletionResponse Breakdown:")
     for key, value in vars(response).items():
         print(f"{key}: {value}")
-    print("\n")
+    print("\nASDL:KAS:LDJALSKDJ:SALKDSAJLKDASLJKDA:LKDJDASLK")
+    print(type(response.choices[0].message))
     print(response.choices[0].message)
 
     chat_history.append(response.choices[0].message)
@@ -176,10 +175,11 @@ if __name__ == '__main__':
     function_result = names_to_functions[function_name](**function_params)
     # print(function_result)
 
-    chat_history.append({"role": "tool", "name": function_name, "content": json.dumps(function_result), "tool_call_id": tool_call.id})
+    chat_history.append({"role": "tool", "name": function_name, "content": json.dumps(
+        function_result), "tool_call_id": tool_call.id})
 
     time.sleep(2)
-    
+
     response = client.chat.complete(
         model=model,
         messages=chat_history,
@@ -189,17 +189,20 @@ if __name__ == '__main__':
     # print(response)
     chat_history.append(response.choices[0].message)
     print(response.choices[0].message.content)
+    
+    for c in chat_history:
+        print(f"\n\n\n{c}")
 
     time.sleep(2)
-    
+
     # Message 3 to system.
     chat_history.append(
-        {   
+        {
             "role": "user",
             "content": "What issues are open on the repository PillarTestRepo?"
         }
     )
-    
+
     # Get response for message 1.
     response = client.chat.complete(
         model=model,
@@ -207,7 +210,7 @@ if __name__ == '__main__':
         tools=tools,
         tool_choice="auto",
     )
-    
+
     # Response analysis
     print("ChatCompletionResponse Breakdown:")
     for key, value in vars(response).items():
@@ -229,10 +232,11 @@ if __name__ == '__main__':
     function_result = names_to_functions[function_name](**function_params)
     # print(function_result)
 
-    chat_history.append({"role": "tool", "name": function_name, "content": json.dumps(function_result), "tool_call_id": tool_call.id})
-    
+    chat_history.append({"role": "tool", "name": function_name, "content": json.dumps(
+        function_result), "tool_call_id": tool_call.id})
+
     time.sleep(2)
-    
+
     response = client.chat.complete(
         model=model,
         messages=chat_history,
@@ -241,8 +245,8 @@ if __name__ == '__main__':
     )
     # print(response)
     chat_history.append(response.choices[0].message)
-    print(response.choices[0].message.content)    
-    
+    print(response.choices[0].message.content)
+
     chat_history.append(
         {"role": "user", "content": "Yes, how would I go about fixing it?"})
     response = client.chat.complete(
@@ -256,7 +260,7 @@ if __name__ == '__main__':
     print(response.choices[0].message.content)
 
     time.sleep(2)
-    
+
     # chat_history.append(
     #     {"role": "user", "content": "Can you break down that URL for me?"})
     # response = client.chat.complete(
@@ -290,7 +294,8 @@ if __name__ == '__main__':
     for message in chat_history:
         extracted = None
         if isinstance(message, dict):  # If it's a dictionary, process normally
-            extracted = {"role": message.get("role"), "content": message.get("content")}
+            extracted = {"role": message.get(
+                "role"), "content": message.get("content")}
             print(message)
         elif isinstance(message, AssistantMessage):  # If it's an AssistantMessage object
             # Access attributes directly
@@ -301,7 +306,8 @@ if __name__ == '__main__':
             if extracted['role'] in ['user', 'assistant']:
                 # print(extracted)
                 # print("\n")
-                summary.append(f"{extracted['role'].capitalize()}: {extracted['content']}")
+                summary.append(
+                    f"{extracted['role'].capitalize()}: {extracted['content']}")
 
     # Print the extracted summary
     print("\n\n".join(summary))
