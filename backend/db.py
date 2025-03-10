@@ -29,6 +29,7 @@ def upsert_user(username, accesstoken):
         if id:
             return True
         else: 
+            conn.rollback()
             return False
 
     except Exception as e:
@@ -59,3 +60,17 @@ def insert_new_conversation(username):
     finally:
         cursor.close()
         release_connection(conn)
+
+def get_conversations_by_user(username):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("SELECT id from conversations WHERE username = %s", (username,))
+        conversation_ids = cursor.fetchall()
+        return conversation_ids
+
+    except Exception as e:
+        print(f"Error getting conversation records for {username} {str(e)}")
+        return []    
+

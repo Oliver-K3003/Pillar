@@ -32,8 +32,17 @@ function App() {
         axios.get(`/api/github/user-info`)
             .then((response) => {
              setUser(response.data.login);
+             console.log(user);
       })
     }, [])
+
+    useEffect(() => {
+        axios.get(`api/conversation/get`, {params: {user}})
+            .then((response) => {
+                setChatIds(response.data.ids)
+                console.log(chatIds)
+            })
+    }, [user])
 
     const createNewChat = () => {
         axios.post(`/api/conversation/create`, {username: user})

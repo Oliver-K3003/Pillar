@@ -5,7 +5,7 @@ from flask import Flask, jsonify, request, session
 from flask_cors import CORS, cross_origin
 from mistral_api import sendReq
 import requests
-from db import upsert_user, insert_new_conversation
+from db import upsert_user, insert_new_conversation, get_conversations_by_user
 from github import Github, Auth
 from dotenv import load_dotenv
 import secrets
@@ -13,7 +13,11 @@ import secrets
 load_dotenv()
 # GH_CLIENT_ID = os.environ.get('GH_CLIENT_ID', 'BROKEN')
 # GH_CLIENT_SECRET = os.environ.get('GH_CLIENT_SECRET', 'BROKEN')
-# FLASK_SECRET = secrets.token_hex()
+
+GH_CLIENT_ID = 'Ov23lipp1FKM5Lltmvw0'
+GH_CLIENT_SECRET = 'f2624253af820133d53db5573d2bc6a90de705a8'
+
+FLASK_SECRET = secrets.token_hex()
 app = Flask(__name__)
 app.secret_key = FLASK_SECRET
 CORS(app, supports_credentials=True)
@@ -226,7 +230,19 @@ def createNewConversation():
     else:
         return jsonify({"message": "There was a problem creating a new conversation"}), 400
 
+@app.route('/conversation/get', methods=["GET"])
+@cross_origin(support_credentials=True)
+def getConversations():
+    user = request.args.get('user')
 
+    print("> getConversations()", file=sys.stderr)
+    conversation_ids = get_conversations_by_user(user)
+    print("< getConversations()", file=sys.stderr)
+
+    if conversation_ids is not None:
+        return jsonify({"ids": conversation_ids, "user": user}), 200
+    else:
+        return jsonify({"message": "There was a problem fetching conversations", "user": user}), 400    
 
 if __name__ == "__main__":
     app.run(port=5000, debug=True)
