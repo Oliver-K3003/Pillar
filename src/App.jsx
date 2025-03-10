@@ -51,6 +51,18 @@ function App() {
             })
     }
 
+    const deleteChat = (id) => {
+        axios.post(`/api/conversation/delete`, {conversation_id: id})
+            .then((response) => {
+                if (response.status === 200) {
+                    setChatIds(chatIds.filter(chatId => chatId !== id))
+                }
+            })
+            .catch((error) => {
+                console.error(`Error deleting conversation with id ${id}:`, error);
+            });
+    }
+
     return (
         <Router>
             <div className="container">
@@ -87,7 +99,7 @@ function App() {
                                     <MenuItem key={id} id={id}>
                                         <div className="menuItemContainer">
                                             <Link className="chat-link" to={`/chat/${id}`}>Chat {id}</Link>
-                                            <button className="headerButton"><img className="headerButtonIcon" src={deleteIcon} /></button>
+                                            <button className="headerButton" onClick={() => deleteChat(id)}><img className="headerButtonIcon" src={deleteIcon} /></button>
                                         </div>
                                     </MenuItem>
                                 )}
@@ -97,7 +109,7 @@ function App() {
                 </div>
                 <Routes>
                     <Route path="/" element={<Home />} />
-                    <Route path="/chat/:chatId" element={<Chat />} />
+                    <Route path="/chat/:chatId" element={user ? <Chat /> : <Home />} />
                 </Routes></div>
         </Router>
     );

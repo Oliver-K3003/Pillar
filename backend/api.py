@@ -5,7 +5,7 @@ from flask import Flask, jsonify, request, session
 from flask_cors import CORS, cross_origin
 from mistral_api import sendReq
 import requests
-from db import upsert_user, insert_new_conversation, get_conversations_by_user
+from db import *
 from github import Github, Auth
 from dotenv import load_dotenv
 import secrets
@@ -13,9 +13,6 @@ import secrets
 load_dotenv()
 # GH_CLIENT_ID = os.environ.get('GH_CLIENT_ID', 'BROKEN')
 # GH_CLIENT_SECRET = os.environ.get('GH_CLIENT_SECRET', 'BROKEN')
-
-GH_CLIENT_ID = 'Ov23lipp1FKM5Lltmvw0'
-GH_CLIENT_SECRET = 'f2624253af820133d53db5573d2bc6a90de705a8'
 
 FLASK_SECRET = secrets.token_hex()
 app = Flask(__name__)
@@ -243,6 +240,53 @@ def getConversations():
         return jsonify({"ids": conversation_ids, "user": user}), 200
     else:
         return jsonify({"message": "There was a problem fetching conversations", "user": user}), 400    
+
+@app.route('/conversation/delete', methods=["POST"])
+@cross_origin(support_credentials=True)
+def deleteConversation():
+    data = request.json
+    conversation_id = data.get("conversation_id")
+
+    print("> deleteConversation()", file=sys.stderr)
+    deleted_id = delete_conversation(conversation_id)
+    print("< deleteConversation()", file=sys.stderr)
+
+    if deleted_id is not None:
+        return jsonify({"message": "Successfully deleted conversation", "id": conversation_id}), 200
+    else:
+        return jsonify({"message": "There was a problem deleting the conversation", "id": conversation_id}), 400    
+
+@app.route('/conversation/messages/add', methods=["POST"])
+@cross_origin(support_credentials=True)
+def addMessages():
+    data = request.json
+    conversation_id = data.get("conversation_id")
+    prompt = data.get("prompt")
+    response = data.get("response")
+
+    print("> addMessages()", file=sys.stderr)
+    id = insert_new_messages(conversation_id, prompt, response)
+    print("< addMessages()", file=sys.stderr)
+
+    if id is not None:
+        return jsonify({"message": "Sucessfully saved new messages", "conversation_id": conversation_id}), 200
+    else:
+        return jsonify({"message": "There was a problem saving new messages", "conversation_id": conversation_id}), 400  
+
+@app.route('/conversation/messages/get', methods=["GET"])
+@cross_origin(support_credentials=True)
+def getMessages():
+    conversation_id = request.args.get('conversation_id')
+
+    print("> getMessages()", file=sys.stderr)
+    result = get_messages_by_conversation(conversation_id)
+    print("< getMessages()", file=sys.stderr)
+
+    if result:
+         messages = [{"prompt": prompt, "response": response} for prompt, response in result]
+         return jsonify({"messages": messages}), 200
+    else:
+        return jsonify({"message": "No messages found for the given conversation ID"}), 400    
 
 if __name__ == "__main__":
     app.run(port=5000, debug=True)

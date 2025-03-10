@@ -74,3 +74,63 @@ def get_conversations_by_user(username):
         print(f"Error getting conversation records for {username} {str(e)}")
         return []    
 
+    finally:
+        cursor.close()
+        release_connection(conn)    
+
+def delete_conversation(conversation_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    try:
+        if isinstance(conversation_id, list):
+            conversation_id = conversation_id[0] 
+
+        cursor.execute("DELETE from conversations WHERE id = %s RETURNING id", (conversation_id,))
+        id = cursor.fetchone()[0]
+        conn.commit()
+        return id
+
+    except Exception as e:
+        print(f"Error deleting conversation record from database, id: {conversation_id} {str(e)}")
+        return []
+
+    finally: 
+        cursor.close()
+        release_connection(conn)    
+
+def insert_new_messages(conversation_id, prompt, response):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("INSERT into messages (conversation_id, prompt, response) VALUES (%s, %s, %s) RETURNING id", (conversation_id, prompt, response))
+        id = cursor.fetchall()
+        conn.commit()
+        return id
+
+    except Exception as e:
+        print(f"Error inserting messages for conversation {conversation_id} {str(e)}")
+        return []
+
+    finally:
+        cursor.close()
+        release_connection(conn)         
+
+def get_messages_by_conversation(conversation_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("SELECT prompt, response from messages WHERE conversation_id = %s", (conversation_id,))
+        messages = cursor.fetchall()
+        return messages
+
+    except Exception as e:
+        print(f"Error getting messages for conversation {conversation_id} {str(e)}")
+        return []
+
+    finally: 
+        cursor.close()
+        release_connection(conn)    
+        

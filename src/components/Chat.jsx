@@ -12,9 +12,9 @@ function ResponseMessage({ msg, timeout = 1000 }) {
 
     if (contents === "" && !finishedMsg) {
         const interval = setInterval(() => {
-            if (i < msg.res.length) {
+            if (i < msg.response.length) {
                 i++;
-                setContents(msg.res.slice(0, i));
+                setContents(msg.response.slice(0, i));
             } else {
                 clearInterval(interval);
                 setFinishedMsg(true);
@@ -57,7 +57,7 @@ function UserMessage({ msg }) {
             <div
                 className="user-msg msg"
             >
-                {msg.usr}
+                {msg.prompt}
             </div>
         </>
     )
@@ -65,23 +65,18 @@ function UserMessage({ msg }) {
 
 export const Chat = () => {
     const { chatId } = useParams();
-    const key = `chat-${chatId}`;
-
-    const [msgs, setMsgs] = useState(() => {
-        const savedMsgs = window.sessionStorage.getItem(`${key}`);
-        return savedMsgs ? JSON.parse(savedMsgs) : [];
-    });
+    const [msgs, setMsgs] = useState([])
     const [msgVal, setMsgVal] = useState("");
 
     useEffect(() => {
-        const savedMsgs = sessionStorage.getItem(`${key}`);
-
-        setMsgs(savedMsgs ? JSON.parse(savedMsgs) : []);
+        setMsgs([]);
+        axios.get(`/api/conversation/messages/get`, { params: { conversation_id: chatId } })
+            .then((response) => {
+                setMsgs(response.data.messages || []);
+            })
+            .catch((err) => console.error(`Error fetching messages: ${err}`));
     }, [chatId]);
 
-    useEffect(() => {
-        window.sessionStorage.setItem(`${key}`, JSON.stringify(msgs));
-    }, [msgs, chatId])
 
     const handleInput = (e) => {
         setMsgVal(e.target.value);
@@ -106,6 +101,8 @@ export const Chat = () => {
 
                 // update state with new msgs
                 setMsgs(newMsgs);
+
+                axios.post(`/api/conversation/messages/add`, {conversation_id: chatId, prompt: msgVal, response: resp.data}).catch((err) => console.error(`Error saving message to DB: ${err}`));
             })
             .catch((err) => console.error(`Error in getResp: ${err}`));
     };
@@ -119,8 +116,11 @@ export const Chat = () => {
                 {msgs.map((msg, i) => {
                     if (msg !== undefined) {
                         return (
-                            Object.keys(msg).includes("usr") ? <UserMessage msg={msg} key={i} /> : <ResponseMessage msg={msg} timeout={50} key={i} />
-                        )
+                            <>
+                                <UserMessage msg={msg} key={`${i}-user`} />
+                                <ResponseMessage msg={msg} timeout={50} key={`${i}-response`} />
+                            </>
+                        );
                     }
                 })}
             </div>
@@ -140,6 +140,4 @@ export const Chat = () => {
         </div>
     );
 }
-
-
 
