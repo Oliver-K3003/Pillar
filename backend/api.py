@@ -1,4 +1,3 @@
-import json
 import os
 import sys
 from flask import Flask, jsonify, request, session
@@ -18,14 +17,22 @@ app = Flask(__name__)
 app.secret_key = FLASK_SECRET
 CORS(app, supports_credentials=True)
 
-
 @app.route('/get-resp', methods=['POST'])
 @cross_origin(supports_credentials=True)
 def getResp():
+    print("> getResp()", file=sys.stderr)
     data = request.json
     prompt = data.get('prompt', 'No Prompt Given')
+    # Send in the github token for use if needed by mistral.
+    token = session.get('github_token')
+    if not token:
+        print("No token found...", file=sys.stderr)
+        return jsonify({"error": "No token found. (User likely not logged in)."}), 401
+    else:
+        print(f"Got token.", file=sys.stderr)
+ 
     # will be filled in with function to gather resp
-    promptResponse = sendReq(prompt)
+    promptResponse = sendReq(userContent=prompt, githubToken=token)
     return promptResponse
 
 # Authentication Endpoints
@@ -108,8 +115,8 @@ def githubUserInfo():
     
     token = session.get('github_token')
     if not token:
-            print("No token found...", file=sys.stderr)
-            return jsonify({"error": "No token found. (User likely not logged in)."}), 401
+        print("No token found...", file=sys.stderr)
+        return jsonify({"error": "No token found. (User likely not logged in)."}), 401
 
     try:
         github = Github(auth=Auth.Token(token))
@@ -193,11 +200,6 @@ def githubUserRepos():
     except Exception as e:
         print(f"< githubUserRepos() Error {e}", file=sys.stderr)    
         return jsonify({"flask_status": "Error with flask API function."}), 400
-
-
-# data = request.json
-#     prompt = data.get('prompt', 'No Prompt Given')
-
 
 
 if __name__ == "__main__":
