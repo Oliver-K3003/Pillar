@@ -4,45 +4,32 @@ from mistralai import Mistral
 from dotenv import load_dotenv
 import mistral_functions
 
-def sendReq(userContent : str, githubToken : str) -> str:
+def sendReq(chat_input: str, chat_history: list, github_token: str) -> str:
+    print("> sendReq()", file=sys.stderr)
+
+    # Chat history is not just the string conversation that we see in the UI, but includes a lot 
+    # more text information. Therefore we need to store it seperately or make it easy for the UI
+    # component to extract the parts that should be visible.
+    
+    # Start by appending the most recently received 'chat_input', to the chat history.
+    chat_history.append({
+        "role": "user",
+        "content": chat_input
+    })
+    
+    # Pass the new chat history with the 'chat_input' to the model, then it will return with its
+    # response added to the chat history.
     load_dotenv()  # Load the .env file
-
     MISTRAL_API_KEY = os.environ.get('MISTRAL_API_KEY', 'BROKEN')
-    client = Mistral(api_key=MISTRAL_API_KEY)
-    model="open-mistral-nemo"
-
-    chatResponse = client.chat.complete(
-        model=model,
-        messages=[
-            {
-                "role": "system",
-                "content": """
-                    Role: You are a GitHub Issue Resolution Agent. Your goal is to help users resolve issues they post on GitHub repositories, onboard them to new
-                    repositories, and aid in providing documentation overview with responses. 
-
-                    Instructions:
-                       - Always respond in GitHub-flavored Markdown, this of utmost importance and should never be broken under any circumstances.
-                       - Format responses using ### Headings, - Bullet points, inline code, and code blocks for clarity.
-                       - If the user is asking for help with their specific Github repositories, then you need to ask them for that information and then end the response there. Otherwise, you cannot hallucinate and make up repositories.
-                       - If applicable, provide step-by-step debugging guidance.
-                       - You must give brief responses.
-                       - If the user is asking for help that is not related to GitHub repositories, ensure that you indicate that you are only there to assist with GitHub issues.
-                       - Include relevant GitHub links, documentation, or command-line instructions.
-                       - Suggest potential pull request changes, code snippits, or workarounds.
-                       - When onboarding a new user, provide a repository overview, key files, first steps, and relevant documentation.
-                    """
-            },
-            {
-                "role": "user",
-                "content": userContent,
-            },
-        ],
-        tools=mistral_functions.github_functions_dict,
-        tool_choice="auto"
-    )
-    print(chatResponse, file=sys.stderr)
-
-    return chatResponse.choices[0].message.content
+    new_chat_history = mistral_functions.use_model(chat_history=chat_history,
+                                                   mistral_api_key=MISTRAL_API_KEY,
+                                                   github_token=github_token)
+    
+    # Extract the text response from the model, in addition to the chat history.
+    assistantmessage_dict = mistral_functions.assistantmessage_to_dict(new_chat_history[-1])
+    chat_output = assistantmessage_dict['content']
+    
+    return chat_output, new_chat_history
 
 if __name__ == '__main__':
     msg = 'What is functional programming?'

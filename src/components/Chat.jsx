@@ -35,20 +35,21 @@ export const Chat = () => {
         e.target.querySelector("input").value = "";
 
         // create deep copy
-        let newMsgs = [...msgs, { "usr": currMsg }];
+        let allMsgs = [...msgs, { "usr": currMsg }];
 
-        setMsgs(newMsgs);
+        setMsgs(allMsgs);
+        console.log(allMsgs)
 
         // get response from API server
-        axios.post("/api/get-resp", { prompt: msgVal })
+        axios.post("/api/get-resp", { msgs: allMsgs })
             .then((resp) => {
                 console.log(resp.data)
                 // deep copy of resp msg list
                 // add new data to list
-                newMsgs = [...newMsgs, { "res": resp.data }];
+                allMsgs = [...allMsgs, { "res": resp.data }];
 
                 // update state with new msgs
-                setMsgs(newMsgs);
+                setMsgs(allMsgs);
             })
             .catch((err) => console.error(`Error in getResp: ${err}`));
     };
@@ -129,7 +130,7 @@ export const Chat = () => {
                 {msgs.map((msg, i) => {
                     if (msg !== undefined) {
                         return (
-                            Object.keys(msg).includes("usr") ? <UserMessage msg={msg} key={i} /> : <ResponseMessage msg={msg} idx={i} timeout={50} key={i} />
+                            Object.keys(msg).includes("usr") ? <UserMessage msg={msg} key={i} /> : <ResponseMessage msg={msg} idx={i} timeout={5} key={i} />
                         )
                     }
                 })}

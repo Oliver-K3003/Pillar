@@ -36,8 +36,8 @@ function App() {
         <Router>
             <div className="container">
                 <GithubLogin />
-                <GithubUser />
-                <GithubButton/>
+                {/* <GithubUser />
+                <GithubButton/> */}
                 <div className="sideNav">
                     <Sidebar collapsed={isSideNavCollapsed}>
                         <div className="sideNavHeader">

@@ -1,4 +1,5 @@
 import os
+import pickle
 import sys
 from flask import Flask, jsonify, request, session
 from flask_cors import CORS, cross_origin
@@ -22,17 +23,34 @@ CORS(app, supports_credentials=True)
 def getResp():
     print("> getResp()", file=sys.stderr)
     data = request.json
-    prompt = data.get('prompt', 'No Prompt Given')
+    messages = data.get('msgs', 'New message & history not passed in.')
+    
+    chat_input = messages[-1]['usr'] # The last value of the chat array passed in is the chat input.
+    
     # Send in the github token for use if needed by mistral.
-    token = session.get('github_token')
-    if not token:
+    github_token = session.get('github_token')
+    if not github_token:
         print("No token found...", file=sys.stderr)
         return jsonify({"error": "No token found. (User likely not logged in)."}), 401
     else:
         print(f"Got token.", file=sys.stderr)
+        
+    # We'll simulate the chat history being retrieved from the DB.
+    # Load conversation.
+    try:
+        with open("chat_history.pkl", "rb") as file:
+            chat_history = pickle.load(file)
+    except:
+        print("file issue or DNE")
+        chat_history=[]
  
     # will be filled in with function to gather resp
-    promptResponse = sendReq(userContent=prompt, githubToken=token)
+    promptResponse, chatHistory = sendReq(chat_input=chat_input, chat_history=chat_history, github_token=github_token)
+    
+    # Store update Conversation.
+    with open("chat_history.pkl", "wb") as file:
+        pickle.dump(chatHistory, file)
+    
     return promptResponse
 
 # Authentication Endpoints
@@ -90,7 +108,8 @@ def githubLoginCallback():
                 json_response = res.json()
                 print(json_response, file=sys.stderr)
                 session['github_token'] = json_response['access_token']
-                session['github_token_type'] = json_response['token_type']
+                session['username'] = githubUserInfo().get_json()['login']
+                
                 print("< githubLoginCallback()", file=sys.stderr)
                 return f"""
                     <script>
