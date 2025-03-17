@@ -1,19 +1,18 @@
 // style sheet imports
 import "./App.css";
 // general imports
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sidebar, Menu, MenuItem, SubMenu } from "react-pro-sidebar";
 import { BrowserRouter as Router, Routes, Route, Link, useParams } from "react-router-dom";
 import { Chat } from './components/Chat.jsx';
+import axios from "axios";
 // asset imports
 import newChat from './assets/chat-add-icon.svg'
 import fullLogo from "./assets/pillar_logo_full.svg";
-
+import deleteIcon from './assets/delete-button.svg';
 import collapseIcon from "./assets/collapse-icon.svg";
 import expandIcon from "./assets/expand-icon.svg";
 import GithubLogin from "./components/GithubLogin";
-import GithubUser from "./components/GithubUser.jsx";
-import GithubButton from "./components/GithubButton.jsx";
 
 /* 
 TODO
@@ -25,19 +24,70 @@ TODO
 
 function App() {
     const [isSideNavCollapsed, setSideNavCollapsed] = useState(false);
-    const [chatIds, setChatIds] = useState([0]);
+    const [chatIds, setChatIds] = useState([]);
+    const [user, setUser] = useState("");
 
+    // Trigger the API call for Github User Info.
+    useEffect(() => {
+        axios.get(`/api/github/user-info`)
+            .then((response) => {
+                console.log(response.data.login);
+                setUser(response.data.login);
+            });
+    }, []);
+
+    // Use effect to send user to DB *after* state is updated
+    useEffect(() => {
+        if (user) { // Only run when user is set
+            console.log("Sending username to DB:", user);
+            axios.post(`/api/db/user/add-or-update`, { username: user })
+                .catch((error) => console.error("Error updating user in DB:", error));
+        }
+    }, [user]);
+
+    // Check for the user state AFTER update and get existing conversation IDs.
+    useEffect(() => {
+        if (user) {
+            console.log("User state updated to:", user);
+            axios.get(`/api/db/conversation/get`, { params: { user } })
+                .then((response) => {
+                    setChatIds(response.data.ids)
+                })
+        }
+    }, [user]);
+
+    // Show obtained chatIDs after obtained.
+    useEffect(() => {
+        if (chatIds) {
+            console.log("Got chatIDs: " + chatIds);
+        }
+    })
+
+    // Function to create new chat.
     const createNewChat = () => {
-        const currId = chatIds[chatIds.length - 1];
-        setChatIds([...chatIds, currId + 1]);
+        axios.post(`/api/db/conversation/create`, { username: user })
+            .then((response) => {
+                setChatIds([...chatIds, response.data.id])
+            })
+    }
+
+    // Function to delete chat.
+    const deleteChat = (id) => {
+        axios.post(`/api/db/conversation/delete`, { conversation_id: id })
+            .then((response) => {
+                if (response.status === 200) {
+                    setChatIds(chatIds.filter(chatId => chatId !== id))
+                }
+            })
+            .catch((error) => {
+                console.error(`Error deleting conversation with id ${id}:`, error);
+            });
     }
 
     return (
         <Router>
             <div className="container">
                 <GithubLogin />
-                {/* <GithubUser />
-                <GithubButton/> */}
                 <div className="sideNav">
                     <Sidebar collapsed={isSideNavCollapsed}>
                         <div className="sideNavHeader">
@@ -66,7 +116,10 @@ function App() {
                             <SubMenu label="Chats">
                                 {chatIds.map((id) =>
                                     <MenuItem key={id} id={id}>
-                                        <Link className="chat-link" to={`/chat/${id}`}>Chat {id + 1}</Link>
+                                        <div className="menuItemContainer">
+                                            <Link className="chat-link" to={`/chat/${id}`}>Chat {id}</Link>
+                                            <button className="headerButton" onClick={() => deleteChat(id)}><img className="headerButtonIcon" src={deleteIcon} /></button>
+                                        </div>
                                     </MenuItem>
                                 )}
                             </SubMenu>
@@ -75,7 +128,7 @@ function App() {
                 </div>
                 <Routes>
                     <Route path="/" element={<Home />} />
-                    <Route path="/chat/:chatId" element={<Chat />} />
+                    <Route path="/chat/:chatId" element={user ? <Chat /> : <Home />} />
                 </Routes></div>
         </Router>
     );

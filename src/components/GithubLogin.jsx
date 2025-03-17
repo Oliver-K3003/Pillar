@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const GithubLogin = () => {
+const GithubLogin = ({ setUser }) => {
 
   function githubLoginRedirect() {
     console.log("Clicked GitHub login button, sending GitHub login request.");
@@ -9,7 +9,6 @@ const GithubLogin = () => {
       .then((response) => {
         if (response.data.status === "Successful") {
           console.log(response.data.github_auth_code_url);
-          // window.location.href = response.data.github_auth_code_url; // Redirects.
           const popup = window.open(response.data.github_auth_code_url, "_blank", "width=500,height=800"); // Open login in popup.
 
           let codeReceived = false;
@@ -26,6 +25,13 @@ const GithubLogin = () => {
             }
           }, false);
 
+          // Fetch user info on on successful login.
+          axios.get(`/api/github/user-info`)
+            .then((response) => {
+              console.log("Logged in user: " + response.data.login);
+              setUser(response.data.login);
+            })
+            .catch((error) => console.error("Error fetching GitHub user info:", error));
         } else {
           console.log("Error within backend function /login/github")
         }

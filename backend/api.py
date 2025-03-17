@@ -3,6 +3,7 @@ import pickle
 import sys
 from flask import Flask, jsonify, request, session
 from flask_cors import CORS, cross_origin
+from db import upsert_user, get_conversations_by_user, insert_new_conversation, delete_conversation
 from mistral_api import sendReq
 import requests
 from github import Github, Auth
@@ -124,7 +125,6 @@ def githubLoginCallback():
         else:
             return jsonify({"error": f"{res.status_code}", "response": res.text}), res.status_code
 
-
 # Github Data Access Endpoints
 # User Information
 @app.route('/github/user-info', methods=['GET'])
@@ -154,71 +154,67 @@ def githubUserInfo():
     except Exception as e:
         print(f"< githubUserInfo() Error {e}", file=sys.stderr)    
         return jsonify({"flask_status": "Error with flask API function."}), 400
-    
-# API to Check Rate Limits (Also can be used to check token validity)
-@app.route('/github/rate-limit', methods=['GET'])
-@cross_origin(supports_credentials=True)
-def githubRateLimitCheck():
-    print("> githubRateLimitCheck()", file=sys.stderr)
-    
-    token = session.get('github_token')
-    if not token:
-        print("No token found...", file=sys.stderr)
-        return jsonify({"error": "No token found. (User likely not logged in)."}), 401
-        
-    try:
-        github = Github(auth=Auth.Token(token))
-        rate_limit = github.get_rate_limit()
-        
-        json_response = {
-            "flask_status" : "success",
-            "rate_limit" : {
-                "core" : rate_limit.core._rawData,
-                "search" : rate_limit.search._rawData
-            }
-        }
-        
-        print("< githubRateLimitCheck()", file=sys.stderr)
-        return jsonify(json_response)
-    
-    except Exception as e:
-        print(f"< githubRateLimitCheck() Error {e}", file=sys.stderr)    
-        return jsonify({"flask_status": "Error with flask API function."}), 400
-    
-# API to get list of repositories from Github associated with user.
-@app.route('/github/get-user-repos', methods=['GET'])
-@cross_origin(supports_credentials=True)
-def githubUserRepos():
-    print("> githubUserRepos()", file=sys.stderr)
 
-    token = session.get('github_token')
-    if not token:
-        print("No token found...", file=sys.stderr)
-        return jsonify({"error": "No token found. (User likely not logged in)."}), 401
-    
-    try:
-        github = Github(auth=Auth.Token(token))
-        github_user_repos = github.get_user().get_repos()
-        user_repos = []
-        for r in github_user_repos:
-            user_repos.append({
-                "name" : r.name,
-                "owner_login" : r.owner.login,
-                "description" : r.description,
-                "html_url" : r.html_url,
-            })
+# Database Calls
+@app.route('/db/user/add-or-update', methods=["POST"])
+@cross_origin(support_credentials=True)
+def upsertUser():
+    data = request.json
+    username = data.get('username')
 
-        json_response = {
-            "flask_status" : "success",
-            "repos" : user_repos
-        }
-        
-        print("< githubUserRepos()", file=sys.stderr)
-        return jsonify(json_response)
-    
-    except Exception as e:
-        print(f"< githubUserRepos() Error {e}", file=sys.stderr)    
-        return jsonify({"flask_status": "Error with flask API function."}), 400
+    print("> upsertUser()", file=sys.stderr)
+    print(username, file=sys.stderr)
+    result = upsert_user(username)
+    print("< upsertUser()", file=sys.stderr)
+            
+    if result:
+        return jsonify({"message": "Successfully inserted/updated user", "userId" : result}), 200
+    else:
+        return jsonify({"message": "There was a problem inserting or updating the user's record"}), 400
+
+@app.route('/db/conversation/get', methods=["GET"])
+@cross_origin(support_credentials=True)
+def getConversations():
+    user = request.args.get('user')
+
+    print("> getConversations()", file=sys.stderr)
+    conversation_ids = get_conversations_by_user(user)
+    print("< getConversations()", file=sys.stderr)
+
+    if conversation_ids is not None:
+        return jsonify({"ids": conversation_ids, "user": user}), 200
+    else:
+        return jsonify({"message": "There was a problem fetching conversations", "user": user}), 400  
+
+@app.route('/db/conversation/create', methods=["POST"])
+@cross_origin(support_credentials=True)
+def createNewConversation():
+    data = request.json
+    username = data.get("username")
+
+    print("> createNewConversation()", file=sys.stderr)
+    id = insert_new_conversation(username)
+    print("< createNewConversation()", file=sys.stderr)
+
+    if id:
+        return jsonify({"message": "Successfully created new conversation", "id": id}), 200
+    else:
+        return jsonify({"message": "There was a problem creating a new conversation"}), 400
+
+@app.route('/db/conversation/delete', methods=["POST"])
+@cross_origin(support_credentials=True)
+def deleteConversation():
+    data = request.json
+    conversation_id = data.get("conversation_id")
+
+    print("> deleteConversation()", file=sys.stderr)
+    deleted_id = delete_conversation(conversation_id)
+    print("< deleteConversation()", file=sys.stderr)
+
+    if deleted_id is not None:
+        return jsonify({"message": "Successfully deleted conversation", "id": conversation_id}), 200
+    else:
+        return jsonify({"message": "There was a problem deleting the conversation", "id": conversation_id}), 400    
 
 
 if __name__ == "__main__":
