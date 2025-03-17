@@ -30,10 +30,3 @@ def sendReq(chat_input: str, chat_history: list, github_token: str) -> str:
     chat_output = assistantmessage_dict['content']
     
     return chat_output, new_chat_history
-
-if __name__ == '__main__':
-    msg = 'What is functional programming?'
-
-    resp = sendReq(msg)
-
-    print(resp)
