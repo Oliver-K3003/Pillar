@@ -52,7 +52,7 @@ function App() {
     useEffect(() => {
         if (user) {
             console.log("User state updated to:", user);
-            axios.get(`/api/db/conversation/get`, { params: { user } })
+            axios.get(`/api/db/conversation/getChatIds`, { params: { user } })
                 .then((response) => {
                     setChatIds(response.data.ids)
                 })

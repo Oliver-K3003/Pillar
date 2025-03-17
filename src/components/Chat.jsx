@@ -7,8 +7,8 @@ import fullLogo from "../assets/pillar_logo_full.svg";
 import blackLogo from "../assets/pillar_icon_black.svg";
 
 function ResponseMessage({ msg, timeout = 1000 }) {
-    const [contents, setContents] = useState("");
-    const [finishedMsg, setFinishedMsg] = useState(false);
+    const [contents, setContents] = useState(msg.isNew ? "" : msg.response);
+    const [finishedMsg, setFinishedMsg] = useState(!msg.isNew);
     let i = 0;
 
     if (contents === "" && !finishedMsg) {
@@ -93,17 +93,14 @@ export const Chat = () => {
 
         setMsgs(newMsgs);
         // get response from API server
-        axios
-            .post(`/api/get-resp`, { prompt: msgVal, chatId: chatId })
+        axios.post(`/api/get-resp`, { prompt: msgVal, chatId: chatId })
             .then((resp) => {
                 // deep copy of resp msg list
                 // add new data to list
-                newMsgs = [...newMsgs, { response: resp.data }];
+                newMsgs = [...newMsgs, { response: resp.data, isNew: true }];
 
                 // update state with new msgs
                 setMsgs(newMsgs);
-
-                axios.post(`/api/conversation/messages/add`, {conversation_id: chatId, prompt: msgVal, response: resp.data}).catch((err) => console.error(`Error saving message to DB: ${err}`));
             })
             .catch((err) => console.error(`Error in getResp: ${err}`));
     };

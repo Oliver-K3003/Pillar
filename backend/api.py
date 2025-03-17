@@ -3,7 +3,8 @@ import pickle
 import sys
 from flask import Flask, jsonify, request, session
 from flask_cors import CORS, cross_origin
-from db import upsert_user, get_conversations_by_user, insert_new_conversation, delete_conversation
+from mistralai import AssistantMessage
+from db import upsert_user, get_conversations_by_user, insert_new_conversation, delete_conversation, get_conversation_history, store_conversation_history
 from mistral_api import sendReq
 import requests
 from github import Github, Auth
@@ -25,8 +26,8 @@ def getResp():
     print("> getResp()", file=sys.stderr)
     data = request.json
     prompt = data.get('prompt', 'No prompt given.')
-    chatID = data.get('chatId', 'No chatId given.')
-    print(f"ChatID: {chatID} Prompt Input: {prompt}", file=sys.stderr)
+    chatId = data.get('chatId', 'No chatId given.')
+    print(f"ChatID: {chatId} Prompt Input: {prompt}", file=sys.stderr)
     
     # Send in the github token for use if needed by mistral.
     github_token = session.get('github_token')
@@ -35,26 +36,26 @@ def getResp():
         return jsonify({"error": "No token found. (User likely not logged in)."}), 401
     else:
         print(f"Got token.", file=sys.stderr)
-        
-    # We'll simulate the chat history being retrieved from the DB.
-    # Load conversation.
-    try:
-        with open("chat_history.pkl", "rb") as file:
-            chat_history = pickle.load(file)
-    except:
-        print("file issue or DNE")
-        chat_history=[]
- 
-    # will be filled in with function to gather resp
-    promptResponse, chatHistory = sendReq(chat_input=prompt, chat_history=chat_history, github_token=github_token)
     
-    print(f"Prompt Response: {promptResponse}", file=sys.stderr)
+    # Given the chat history, retrieve the context history bytes from DB.
+    try:
+        chat_history = get_conversation_history(chatId)
+        print(f"Chat history before model: {len(chat_history)}", file=sys.stderr)
+    except:
+        print("Error getting chat history.", file=sys.stderr)
+    
+    # Send retrived prompt, chat history, and github token, and obtain response (to send back to UI)
+    prompt_response, new_chat_history = sendReq(chat_input=prompt, chat_history=chat_history, github_token=github_token)
     
     # Store update Conversation.
-    with open("chat_history.pkl", "wb") as file:
-        pickle.dump(chatHistory, file)
+    try:
+        print(f"Chat history after model: {len(chat_history)}\n", file=sys.stderr)
+        print(f"Prompt Response: {prompt_response}", file=sys.stderr)
+        store_conversation_history(chatId, new_chat_history)
+    except:
+        print("Error saving chat history.", file=sys.stderr)
     
-    return promptResponse
+    return prompt_response
 
 # Authentication Endpoints
 # Called by login button, redirect to GitHub login page.
@@ -174,7 +175,7 @@ def upsertUser():
     else:
         return jsonify({"message": "There was a problem inserting or updating the user's record"}), 400
 
-@app.route('/db/conversation/get', methods=["GET"])
+@app.route('/db/conversation/getChatIds', methods=["GET"])
 @cross_origin(support_credentials=True)
 def getConversations():
     user = request.args.get('user')
@@ -217,6 +218,47 @@ def deleteConversation():
         return jsonify({"message": "Successfully deleted conversation", "id": conversation_id}), 200
     else:
         return jsonify({"message": "There was a problem deleting the conversation", "id": conversation_id}), 400    
+
+@app.route('/conversation/messages/get', methods=["GET"])
+@cross_origin(support_credentials=True)
+def getMessages():
+    print("> getMessages()", file=sys.stderr)
+    chatId = request.args.get('conversation_id')
+
+    try:
+        chat_history = get_conversation_history(chatId)
+        
+    except:
+        return jsonify({"message": "Error getting messages."}), 400 
+    
+    
+    print("< getMessages()", file=sys.stderr)
+
+    if chat_history:
+        return_list = []
+        for chat in chat_history:
+            extracted = None
+            if isinstance(chat, dict):
+                extracted = {"role": chat.get("role"), "content": chat.get("content")}
+                # print(extracted, file=sys.stderr)
+            elif isinstance(chat, AssistantMessage):  # If it's an AssistantMessage object
+                # Access attributes directly
+                extracted = {"role": chat.role, "content": chat.content}
+                # print(extracted, file=sys.stderr)
+
+            if extracted:  # Ignore None values
+                role = extracted['role']
+                if role in ['user', 'assistant']:
+                    if role == "user":
+                        return_list.append({ 'prompt' : extracted['content']})
+                    if role == "assistant":
+                        return_list.append({ 'response' : extracted['content']})
+        
+        for i in return_list:
+            print(i, file=sys.stderr)
+        return jsonify({"messages": return_list}), 200
+    else:
+        return jsonify({"message": "No messages found for the given conversation ID"}), 400 
 
 
 if __name__ == "__main__":

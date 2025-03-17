@@ -1,7 +1,9 @@
+import pickle
 from platform import release
 from psycopg2 import pool
 from flask import jsonify
 import sys
+import mistral_functions
 
 PG_URI="dbname=defaultdb user=doadmin password=AVNS_IYST4j1Vy65B-P-mnuv host=db-postgresql-nyc3-97992-do-user-19817785-0.e.db.ondigitalocean.com port=25060"
 
@@ -71,9 +73,15 @@ def get_conversations_by_user(username):
 def insert_new_conversation(username):
     conn = get_connection()
     cursor = conn.cursor()
+    
+    chat_history = [mistral_functions.github_assistant_instructions]
+    empty_history = pickle.dumps(chat_history)
 
     try:
-        cursor.execute("INSERT INTO conversations (username) VALUES (%s) RETURNING id", (username,))
+        cursor.execute(
+            "INSERT INTO conversations (username, conversation_history) VALUES (%s, %s) RETURNING id",
+            (username, empty_history)
+        )
         id = cursor.fetchone()[0]
         conn.commit()
 
@@ -109,5 +117,55 @@ def delete_conversation(conversation_id):
         cursor.close()
         release_connection(conn)
 
-if __name__ == "__main__":
-    print(insert_new_conversation("the-clam"))
+def get_conversation_history(conversation_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("SELECT conversation_history FROM conversations WHERE id = %s", (conversation_id,))
+        result = cursor.fetchone()
+        
+        if result and result[0]:  # Ensure result is not None or empty
+            history = pickle.loads(result[0])
+            return history
+        return []  # Return empty list if no data
+
+    except Exception as e:
+        print(f"Error retrieving conversation history: {str(e)}", file=sys.stderr)
+        return []
+    
+    finally:
+        cursor.close()
+        release_connection(conn)
+
+def store_conversation_history(conversation_id, new_chat_history):
+    print("> store_conversation_history()", file=sys.stderr)
+    conn = get_connection()
+    cursor = conn.cursor()
+    
+    print(new_chat_history, file=sys.stderr)    
+    chat_history = pickle.dumps(new_chat_history)
+    
+    try:
+        cursor.execute(
+            "UPDATE conversations SET conversation_history = %s WHERE id = %s RETURNING id",
+            (chat_history, conversation_id)
+        )
+        id = cursor.fetchone()  # Fetch the returned id
+
+        if id is None:  # Check if row exists
+            print(f"Error: No row found with id {conversation_id}", file=sys.stderr)
+            conn.rollback()
+            return False  # No row updated
+
+        conn.commit()
+        return True  # Success
+
+    except Exception as e:
+        conn.rollback()
+        print(f"Error updating conversation history: {str(e)}", file=sys.stderr)
+        return False  # Failure
+    
+    finally:
+        cursor.close()
+        release_connection(conn)
