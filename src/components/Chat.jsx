@@ -1,10 +1,12 @@
 import React from "react";
+import ReactMarkdown from 'react-markdown'
 import { useState, useEffect } from "react";
 import { useParams } from 'react-router-dom';
 import axios from "axios";
 import submitArrow from "../assets/submit_arrow.svg";
 import fullLogo from "../assets/pillar_logo_full.svg";
 import blackLogo from "../assets/pillar_icon_black.svg";
+import { Oval } from 'react-loader-spinner';
 
 function ResponseMessage({ msg, timeout = 1000 }) {
     const [contents, setContents] = useState(msg.isNew ? "" : msg.response);
@@ -33,7 +35,9 @@ function ResponseMessage({ msg, timeout = 1000 }) {
             <div
                 className="resp-msg msg"
             >
-                {contents}
+                <ReactMarkdown components={{ p: "span" }}>
+                    {contents}
+                </ReactMarkdown>
                 {!finishedMsg &&
                     <svg
                         viewBox="8 0 8 16"
@@ -68,14 +72,17 @@ export const Chat = () => {
     const { chatId } = useParams();
     const [msgs, setMsgs] = useState([])
     const [msgVal, setMsgVal] = useState("");
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
+        setLoading(true);
         setMsgs([]);
         axios.get(`/api/conversation/messages/get`, { params: { conversation_id: chatId } })
             .then((response) => {
                 setMsgs(response.data.messages || []);
             })
-            .catch((err) => console.error(`Error fetching messages: ${err}`));
+            .catch((err) => console.error(`Error fetching messages: ${err}`))
+            .finally(() => setLoading(false));
     }, [chatId]);
 
 
@@ -107,37 +114,44 @@ export const Chat = () => {
 
     return (
         <div className="container">
-            <div className="background">
-                {msgs.length < 1 ? <img src={fullLogo} alt="" /> : <></>}
-            </div>
-            <div className="message-list">
-                {msgs.map((msg, i) => {
-                    if (msg !== undefined) {
-                        return (
-                            <React.Fragment key={i}>
-                                {msg.prompt && <UserMessage msg={msg} key={`${i}-user`} />}
-                                {msg.response && <ResponseMessage msg={msg} timeout={1} key={`${i}-response`} />}
-                            </React.Fragment>
-                        );
-                    } else {
-                        return null;
-                    }
-                })}
-
-            </div>
-
-            <form className="chat-bar" onSubmit={(e) => getResp(e)}>
-                <input
-                    type="text"
-                    placeholder="Message Pillar"
-                    onChange={handleInput}
+            {loading ? (
+                <Oval
+                    height={250}
+                    width={250}
                 />
-                <button
-                    type="button"
-                >
-                    <img src={submitArrow} alt="" />
-                </button>
-            </form>
+            ) : (
+                <>
+                    <div className="background">
+                        {msgs.length < 1 ? <img src={fullLogo} alt="" /> : <></>}
+                    </div>
+                    <div className="message-list">
+                        {msgs.map((msg, i) => {
+                            if (msg !== undefined) {
+                                return (
+                                    <React.Fragment key={i}>
+                                        {msg.prompt && <UserMessage msg={msg} key={`${i}-user`} />}
+                                        {msg.response && <ResponseMessage msg={msg} timeout={1} key={`${i}-response`} />}
+                                    </React.Fragment>
+                                );
+                            } else {
+                                return null;
+                            }
+                        })}
+                    </div>
+                    <form className="chat-bar" onSubmit={(e) => getResp(e)}>
+                        <input
+                            type="text"
+                            placeholder="Message Pillar"
+                            onChange={handleInput}
+                        />
+                        <button
+                            type="button"
+                        >
+                            <img src={submitArrow} alt="" />
+                        </button>
+                    </form>
+                </>
+            )}
         </div>
     );
 }

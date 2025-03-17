@@ -48,6 +48,14 @@
     z-index: 100;
 }
 
+.menuItemContainer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 80%;
+    right-padding: 10px;
+}
+
 .headerButton {
     display: flex;
     justify-content: center;
