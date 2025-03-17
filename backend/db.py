@@ -3,7 +3,7 @@ from psycopg2 import pool
 from flask import jsonify
 import sys
 
-PG_URI=""
+PG_URI="dbname=defaultdb user=doadmin password=AVNS_IYST4j1Vy65B-P-mnuv host=db-postgresql-nyc3-97992-do-user-19817785-0.e.db.ondigitalocean.com port=25060"
 
 conn_pool = pool.SimpleConnectionPool(
     minconn=1,

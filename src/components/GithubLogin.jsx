@@ -27,11 +27,14 @@ const GithubLogin = ({ setUser }) => {
 
           // Fetch user info on on successful login.
           axios.get(`/api/github/user-info`)
-            .then((response) => {
-              console.log("Logged in user: " + response.data.login);
+          .then((response) => {
+              console.log(response.data.login);
               setUser(response.data.login);
-            })
-            .catch((error) => console.error("Error fetching GitHub user info:", error));
+          })
+          .catch((error) => {
+              console.log("Error getting user info.");
+          });
+
         } else {
           console.log("Error within backend function /login/github")
         }

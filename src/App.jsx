@@ -33,6 +33,9 @@ function App() {
             .then((response) => {
                 console.log(response.data.login);
                 setUser(response.data.login);
+            })
+            .catch((error) => {
+                console.log("Error getting user info.");
             });
     }, []);
 
@@ -87,7 +90,7 @@ function App() {
     return (
         <Router>
             <div className="container">
-                <GithubLogin />
+                <GithubLogin setUser={setUser}/>
                 <div className="sideNav">
                     <Sidebar collapsed={isSideNavCollapsed}>
                         <div className="sideNavHeader">
