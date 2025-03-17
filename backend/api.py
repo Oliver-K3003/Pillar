@@ -24,9 +24,9 @@ CORS(app, supports_credentials=True)
 def getResp():
     print("> getResp()", file=sys.stderr)
     data = request.json
-    messages = data.get('msgs', 'New message & history not passed in.')
-    
-    chat_input = messages[-1]['usr'] # The last value of the chat array passed in is the chat input.
+    prompt = data.get('prompt', 'No prompt given.')
+    chatID = data.get('chatId', 'No chatId given.')
+    print(f"ChatID: {chatID} Prompt Input: {prompt}", file=sys.stderr)
     
     # Send in the github token for use if needed by mistral.
     github_token = session.get('github_token')
@@ -46,7 +46,9 @@ def getResp():
         chat_history=[]
  
     # will be filled in with function to gather resp
-    promptResponse, chatHistory = sendReq(chat_input=chat_input, chat_history=chat_history, github_token=github_token)
+    promptResponse, chatHistory = sendReq(chat_input=prompt, chat_history=chat_history, github_token=github_token)
+    
+    print(f"Prompt Response: {promptResponse}", file=sys.stderr)
     
     # Store update Conversation.
     with open("chat_history.pkl", "wb") as file:
