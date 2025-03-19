@@ -21,6 +21,7 @@ jsonpath-python==1.0.6
 MarkupSafe==3.0.1
 mistralai==1.2.2
 mypy-extensions==1.0.0
+psycopg2==2.9.10
 pycparser==2.22
 pydantic==2.9.2
 pydantic_core==2.23.4
