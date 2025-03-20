@@ -104,6 +104,8 @@ def use_model(chat_history: list, mistral_api_key: str, github_token: str) -> st
         logging.info("Unspecified pathway for model logic.")
 
 ##### Functions to Call Github #####
+
+
 def list_user_repos(github_token: str) -> str:
     logging.info("> list_user_repos()")
     github = Github(auth=Auth.Token(github_token))
@@ -114,16 +116,21 @@ def list_user_repos(github_token: str) -> str:
 
     for repo in repos:
         # Use repo.html_url
-        repo_list.append({"name": repo.name, "owner" : repo.owner.login, "url": repo.html_url})
+        repo_list.append({
+            "name": repo.name,
+            "owner": repo.owner.login,
+            "html_url": repo.html_url,
+            "url" : repo.url
+        })
 
     logging.info("< list_user_repos()")
     return {
-        "type": "repo_list",  # Discriminator field to prevent the Mistral error
+        "type": "repo_list",
         "repositories": repo_list
     }
 
 
-def list_repo_issues(github_token: str, repo_name: str, repo_owner: str) -> str:
+def list_open_repo_issues(github_token: str, repo_name: str, repo_owner: str) -> str:
     logging.info("> list_repo_issues()")
 
     # Get the repository object
@@ -146,21 +153,92 @@ def list_repo_issues(github_token: str, repo_name: str, repo_owner: str) -> str:
             "number": issue.number,
             "title": issue.title,
             "body": issue.body,
-            "url": issue.html_url
+            "html_url": issue.html_url,
+            "url": issue.url,
         })
 
     logging.info("< list_repo_issues()")
     return {
-        "type": "issue_list",  # Discriminator field to prevent Mistral error
+        "type": "issue_list",
         "repository": repo_name,
         "issues": issue_list
     }
 
 
+def get_assigned_issues(github_token: str) -> str:
+    logging.info("> get_assigned_issues")
+
+    github = Github(auth=Auth.Token(github_token))
+    try:
+        assigned_issues = github.get_user().get_issues()
+    except Exception as e:
+        logging.error(f"Error fetching repo: {e}")
+        return {
+            "type": "error",
+            "message": f"Cannot get assigned issues for '{github.get_user().login}'."
+        }
+
+    issue_list = []
+    for issue in assigned_issues:
+        issue_list.append({
+            "repo": issue.repository_url,
+            "number": issue.number,
+            "title": issue.title,
+            "body": issue.body,
+            "html_url": issue.html_url,
+            "url": issue.url
+        })
+    if len(issue_list) == 0:
+        issue_list = "No assigned issues found for the user."
+    
+    logging.info("< list_repo_issues()")
+    return {
+        "type": "issue_list",
+        "assigned_issues": issue_list
+    }
+
+# Issue comments
+def get_issue_comments(github_token: str, repo_owner: str, repo_name: str, issue_num: str) -> str:
+    logging.info("> get_issue_comments")
+    github = Github(auth=Auth.Token(github_token))
+    
+    try:
+        repo = github.get_repo(f"{repo_owner}/{repo_name}")
+        issue = repo.get_issue(int(issue_num))
+        comments = issue.get_comments()
+    except Exception as e:
+        logging.error(f"Error fetching repo: {e}")
+        return {
+            "type": "error",
+            "message": f"Cannot get issue comments for issue {issue_num} from {repo_name}."
+        }
+        
+    all_comments = []
+    for c in comments:
+        all_comments.append({
+            "commenter" : c.user.login,
+            "content" : c.body,
+            "html_url": c.html_url,
+            "url" : c.url
+        })
+        
+    if len(all_comments) == 0:
+        all_comments = "No assigned issues found for the user."
+        
+    logging.info("< get_issue_comments")
+    return {
+        "type": "issue_comment_list",
+        "comments": all_comments
+    }
+#
+
+
 ##### Function mappings for model context #####
 github_function_mapping = {
     'list_user_repos': functools.partial(list_user_repos),
-    'list_repo_issues': functools.partial(list_repo_issues)
+    'list_repo_issues': functools.partial(list_open_repo_issues),
+    'get_assigned_issues' : functools.partial(get_assigned_issues),
+    'get_issue_comments' : functools.partial(get_issue_comments),
 }
 
 github_functions_dict = [
@@ -195,7 +273,43 @@ github_functions_dict = [
                 "required": ["repo_name", "repo_owner"],
             },
         },
-    }
+    }, 
+    {
+        "type": "function",
+        "function": {
+            "name": "get_assigned_issues",
+            "description": "When a user is authenticated, gets the list of issues that are assigned to them.",
+            "parameters": {
+                "type": "object",
+                "properties": {},
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_issue_comments",
+            "description": "Given a repo name in the format 'owner/repo', and the issue number, return the comments for a the issue.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "repo_owner": {
+                        "type": "string",
+                        "description": "The username of the owner of the repository from where to get issues from.",
+                    },
+                    "repo_name": {
+                        "type": "string",
+                        "description": "The repository where to get issues from.",
+                    },                    
+                    "issue_num": {
+                        "type": "string",
+                        "description": "The issue number that the user would like the get the comments from.",
+                    }
+                },
+                "required": ["repo_name", "issue_num"],
+            },
+        },
+    },
 ]
 
 
@@ -203,20 +317,30 @@ github_functions_dict = [
 github_assistant_instructions = {
     "role": "system",
     "content": """
-        Role: You are a GitHub Issue Resolution Agent. Your goal is to help users resolve issues they post on GitHub repositories, onboard them to new
-        repositories, and aid in providing documentation overview with responses. 
+        Role: You are a GitHub Issue Resolution Agent. 
+        Goals: Your goal is to help users resolve issues they have on GitHub, onboard them to new repositories if they ask for onboarding help, and aid in providing documentation overview with responses.        
 
-        Instructions:
-           - Always respond in GitHub-flavored Markdown, this of utmost importance and should never be broken under any circumstances.
-           - Format responses using ### Headings, - Bullet points, inline code, and code blocks for clarity.
-           - If the user is asking for help with their specific Github repositories, then you need to ask them for that information and then end the response there. Otherwise, you cannot hallucinate and make up repositories.
-           - If applicable, provide step-by-step debugging guidance.
-           - You must give brief responses.
-           - After retriving issues from Github specified by the user, ensure that you ask them if it is the correct issue that they would like addressed.
-           - If the user is asking for help that is not related to GitHub repositories, ensure that you indicate that you are only there to assist with GitHub issues.
-           - Include relevant GitHub links, documentation, or command-line instructions.
-           - Suggest potential pull request changes, code snippits, or workarounds.
-           - When onboarding a new user, provide a repository overview, key files, first steps, and relevant documentation.
+        Instructions for Formatting Responses:
+            - ***Always respond in GitHub-flavored Markdown, this of utmost importance and should never be broken under any circumstances***.
+            - Use the following formatting:
+                - `###` for section headings.
+                - `-` for bullet points.
+                - Surround code with the character ` for short snippets of code.
+                - Surround code with ``` for longer examples.
+            - If there are more than 5 items in a list ***ONLY SHOW THE FIRST FIVE***, then the rest if the user agrees to. You don't need to tell the user how many items are in the list if it is less than the max number that you can show.
+        
+        Behaviour:
+            - Do not suggest actions that require write access, such as creating comments or pull requests.
+            - You must provide brief responses that address the user's issues without being too verbose.
+            - If there is a list of items, only show the first five of them, and ask the user if they would like to see more of the long list, and show the rest upon request by the user's response.
+            - If the user is asking for help with a specific GitHub repository, and they do not specify or there is no context history, check the list of repositories they have access to.
+            - When deciding a repository to work on, make sure you ask and confirm which repository they would like to work on.
+            - After retriving issues from Github as spotified by the user, verify with them to ensure that it is the issue they would like to work on.
+            - Only assist with issues related to software development and Github issues.
+            - Include relevant GitHub links, documentation, or command-line instructions.
+            - Suggest potential pull request changes, code snippets, or workarounds.
+            - If a user requests onboarding for a repository, do a scan of the file layout of the repository and provide a repository overview of key files, first steps, and relevant documentation.
+            - When receiving information from a GitHub API call, links with parameter "html_url" are the links for users to view, while "url" is used for future API endpoint calls for further tool usage.
     """
 }
 
@@ -231,6 +355,8 @@ def assistantmessage_to_dict(am: AssistantMessage) -> dict:
 
 
 if __name__ == '__main__':
-
     GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN', None)
     github = Github(auth=Auth.Token(GITHUB_TOKEN))
+    
+    print(get_issue_comments(GITHUB_TOKEN, "Oliver-K3003/Pillar", "7"))
+    
