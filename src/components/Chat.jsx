@@ -73,7 +73,6 @@ export const Chat = () => {
     const [msgs, setMsgs] = useState([])
     const [msgVal, setMsgVal] = useState("");
     const [loading, setLoading] = useState(false);
-    const [isSideNavCollapsed, setSideNavCollapsed] = useState(false);
 
     useEffect(() => {
         setLoading(true);
@@ -113,105 +112,46 @@ export const Chat = () => {
             .catch((err) => console.error(`Error in getResp: ${err}`));
     };
 
-    // Function to create new chat.
-    const createNewChat = () => {
-        axios.post(`/api/db/conversation/create`, { username: user })
-            .then((response) => {
-                setChatIds([...chatIds, response.data.id])
-            })
-    }
-
-    // Function to delete chat.
-    const deleteChat = (id) => {
-        axios.post(`/api/db/conversation/delete`, { conversation_id: id })
-            .then((response) => {
-                if (response.status === 200) {
-                    setChatIds(chatIds.filter(chatId => chatId !== id))
-                }
-            })
-            .catch((error) => {
-                console.error(`Error deleting conversation with id ${id}:`, error);
-            });
-    }
-
     return (
         <div className="container">
-            <div className="sideNav">
-                <Sidebar collapsed={isSideNavCollapsed}>
-                    <div className="sideNavHeader">
-                        <button className="headerButton" type="button" onClick={() => setSideNavCollapsed(!isSideNavCollapsed)}>
-                            {!isSideNavCollapsed ? <img className="headerButtonIcon" src={collapseIcon} alt="" /> : <img className="headerButtonIcon" src={expandIcon} alt="" />}
-                        </button>
-                        {!isSideNavCollapsed ? <button className="headerButton" type="button" onClick={createNewChat}>
-                            <img className="headerButtonIcon" src={newChat} alt="" />
-                        </button> : null}
+            {loading ? (
+                <Oval
+                    height={250}
+                    width={250}
+                />
+            ) : (
+                <>
+                    <div className="background">
+                        {msgs.length < 1 ? <img src={fullLogo} alt="" /> : <></>}
                     </div>
-                    <Menu className="chat-container" title="Pillar" menuItemStyles={{
-                        button: ({ level, active, disabled }) => {
-                            if (level === 0 || level === 1) {
-                                return {
-                                    transition: "backgroundColor 200ms ease-in-out",
-                                    zIndex: "100",
-                                    "&:hover": {
-                                        backgroundColor: "#403f3f !important",
-                                        zIndex: "100"
-                                    }
-                                }
+                    <div className="message-list">
+                        {msgs.map((msg, i) => {
+                            if (msg !== undefined) {
+                                return (
+                                    <React.Fragment key={i}>
+                                        {msg.prompt && <UserMessage msg={msg} key={`${i}-user`} />}
+                                        {msg.response && <ResponseMessage msg={msg} timeout={1} key={`${i}-response`} />}
+                                    </React.Fragment>
+                                );
+                            } else {
+                                return null;
                             }
-                        },
-                    }
-                    }>
-                        <SubMenu label="Chats">
-                            {chatIds.map((id) =>
-                                <MenuItem key={id} id={id}>
-                                    <div className="menuItemContainer">
-                                        <Link className="chat-link" to={`/chat/${id}`}>Chat {id}</Link>
-                                        <button className="headerButton" onClick={() => deleteChat(id)}><img className="headerButtonIcon" src={deleteIcon} /></button>
-                                    </div>
-                                </MenuItem>
-                            )}
-                        </SubMenu>
-                    </Menu>
-                </Sidebar>
-                {loading ? (
-                    <Oval
-                        height={250}
-                        width={250}
-                    />
-                ) : (
-                    <>
-                        <div className="background">
-                            {msgs.length < 1 ? <img src={fullLogo} alt="" /> : <></>}
-                        </div>
-                        <div className="message-list">
-                            {msgs.map((msg, i) => {
-                                if (msg !== undefined) {
-                                    return (
-                                        <React.Fragment key={i}>
-                                            {msg.prompt && <UserMessage msg={msg} key={`${i}-user`} />}
-                                            {msg.response && <ResponseMessage msg={msg} timeout={1} key={`${i}-response`} />}
-                                        </React.Fragment>
-                                    );
-                                } else {
-                                    return null;
-                                }
-                            })}
-                        </div>
-                        <form className="chat-bar" onSubmit={(e) => getResp(e)}>
-                            <input
-                                type="text"
-                                placeholder="Message Pillar"
-                                onChange={handleInput}
-                            />
-                            <button
-                                type="button"
-                            >
-                                <img src={submitArrow} alt="" />
-                            </button>
-                        </form>
-                    </>
-                )}
-            </div>
+                        })}
+                    </div>
+                    <form className="chat-bar" onSubmit={(e) => getResp(e)}>
+                        <input
+                            type="text"
+                            placeholder="Message Pillar"
+                            onChange={handleInput}
+                        />
+                        <button
+                            type="button"
+                        >
+                            <img src={submitArrow} alt="" />
+                        </button>
+                    </form>
+                </>
+            )}
         </div>
-            );
+    );
 }
