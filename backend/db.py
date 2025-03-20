@@ -3,7 +3,7 @@ from platform import release
 from psycopg2 import pool
 from flask import jsonify
 import sys
-import mistral_functions
+import llm_functions
 
 PG_URI="dbname=defaultdb user=doadmin password=AVNS_IYST4j1Vy65B-P-mnuv host=db-postgresql-nyc3-97992-do-user-19817785-0.e.db.ondigitalocean.com port=25060"
 
@@ -74,7 +74,7 @@ def insert_new_conversation(username):
     conn = get_connection()
     cursor = conn.cursor()
     
-    chat_history = [mistral_functions.github_assistant_instructions]
+    chat_history = [llm_functions.github_assistant_instructions]
     empty_history = pickle.dumps(chat_history)
 
     try:

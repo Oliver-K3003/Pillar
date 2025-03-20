@@ -5,7 +5,7 @@ from flask import Flask, jsonify, request, session
 from flask_cors import CORS, cross_origin
 from mistralai import AssistantMessage
 from db import upsert_user, get_conversations_by_user, insert_new_conversation, delete_conversation, get_conversation_history, store_conversation_history
-from mistral_api import sendReq
+from llm_api import sendReq
 import requests
 from github import Github, Auth
 from dotenv import load_dotenv
@@ -29,7 +29,7 @@ def getResp():
     chatId = data.get('chatId', 'No chatId given.')
     print(f"ChatID: {chatId} Prompt Input: {prompt}", file=sys.stderr)
     
-    # Send in the github token for use if needed by mistral.
+    # Send in the github token for use if needed.
     github_token = session.get('github_token')
     if not github_token:
         print("No token found...", file=sys.stderr)

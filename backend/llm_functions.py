@@ -8,11 +8,11 @@ from github import Github, Auth
 from mistralai import AssistantMessage, Mistral
 load_dotenv()
 
-##### Logic for the Mistral model #####
-def use_model(chat_history: list, mistral_api_key: str, github_token: str) -> str:
+##### Logic for the LLM #####
+def use_model(chat_history: list, llm_api_key: str, github_token: str) -> str:
     logging.info("\n============================== > use_model() ==============================")
     # Select model for use.
-    client = Mistral(api_key=mistral_api_key)
+    client = Mistral(api_key=llm_api_key)
     model = "open-mistral-nemo"
     
     # Check chat history to see if instructions have been already added, if not, append to beginning.
@@ -20,24 +20,24 @@ def use_model(chat_history: list, mistral_api_key: str, github_token: str) -> st
         chat_history.insert(0, github_assistant_instructions)
         print("Appending")
 
-    # Response from Mistral.
-    logging.info("\n========== Mistral Response: ==========")
+    # Response from LLM.
+    logging.info("\n========== LLM Response: ==========")
     # Send new chat w/ context to the model.
-    mistral_response = client.chat.complete(
+    llm_response = client.chat.complete(
         model=model,
         messages=chat_history,
         tools=github_functions_dict,
         tool_choice="auto",
         n=1
     )
-    for key, value in vars(mistral_response).items():
+    for key, value in vars(llm_response).items():
         logging.info(f"{key}: {value}")
     
     logging.info("\n========== Decompose Choices: ==========")
     all_choices_dict = []
     original_assistantmessage = None # We need to save the original version of the AssistantMessage to append to chat history.
     
-    for choice in mistral_response.choices:
+    for choice in llm_response.choices:
         choice_dict = {}
         for item in choice:
             key = item[0]
@@ -97,7 +97,7 @@ def use_model(chat_history: list, mistral_api_key: str, github_token: str) -> st
         time.sleep(2) # Sleep to avoid rate limiting.
         
         # Use the model recursively until no more tool calls are required.
-        chat_history = use_model(chat_history=chat_history, mistral_api_key=mistral_api_key, github_token=github_token)
+        chat_history = use_model(chat_history=chat_history, llm_api_key=llm_api_key, github_token=github_token)
         logging.info("\n============================== < use_model() ==============================")
         return chat_history
     else:
@@ -333,6 +333,7 @@ github_assistant_instructions = {
             - Do not suggest actions that require write access, such as creating comments or pull requests.
             - You must provide brief responses that address the user's issues without being too verbose.
             - If there is a list of items, only show the first five of them, and ask the user if they would like to see more of the long list, and show the rest upon request by the user's response.
+            - If you are showing a list of items, only show their titles and subtitles. Do not show further details until an item from that list itself is selected.
             - If the user is asking for help with a specific GitHub repository, and they do not specify or there is no context history, check the list of repositories they have access to.
             - When deciding a repository to work on, make sure you ask and confirm which repository they would like to work on.
             - After retriving issues from Github as spotified by the user, verify with them to ensure that it is the issue they would like to work on.
