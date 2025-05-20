@@ -1,8 +1,4 @@
-# React + Vite
+# Pillar
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Pillar is an assistant that integrates directly with the user's GitHub to provide solutions and advice regarding specific issues within owned repositories.
+It utilizes Mistral's API to field requests and GitHub's API to gather repository and issue information.
